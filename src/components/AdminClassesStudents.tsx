@@ -9,7 +9,7 @@ interface AdminClassesStudentsProps {
   users: User[];
   lang: Language;
 }
-
+//
 export default function AdminClassesStudents({ classes, slips, users, lang }: AdminClassesStudentsProps) {
   const t = TRANSLATIONS[lang];
   const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
