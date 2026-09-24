@@ -2,13 +2,13 @@ import express from "express";
 import path from "path";
 import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
-import { initDatabase, getLMSData, saveItem, deleteItem, getExamAttempts, getMySqlStatus } from './server/db';
+import { initDatabase, getLMSData, saveItem, deleteItem, getExamAttempts, getDatabaseStatus } from './server/db';
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Initialize Database (detects MySQL or falls back to local file)
+  // Initialize the required MongoDB connection.
   await initDatabase();
 
   // Middleware to support JSON post payloads (including base64 uploaded payment slips)
@@ -17,7 +17,7 @@ async function startServer() {
 
   // API Route: Database Connection Status
   app.get("/api/db-status", (req, res) => {
-    res.json(getMySqlStatus());
+    res.json(getDatabaseStatus());
   });
 
   // API Route: Fetch all tables

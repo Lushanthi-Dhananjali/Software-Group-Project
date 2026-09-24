@@ -4581,12 +4581,12 @@ export default function App() {
                     <div className="flex-1 bg-slate-950 border border-slate-850 rounded-xl p-3 font-mono text-[10px] text-slate-400 space-y-2 max-h-[250px] overflow-y-auto mt-2">
                       <div className="text-emerald-500">[SYSTEM] • SECURE DEPLOYMENT VERIFIED ON PORT 3000</div>
                       <div className="text-slate-500">[{new Date().toISOString().split('T')[0]} 08:31:02] • auth.sync.success: admin@physics-lms.com</div>
-                      <div className="text-slate-500">[{new Date().toISOString().split('T')[0]} 09:12:44] • mysql.rules.state: Database schema initialized</div>
+                      <div className="text-slate-500">[{new Date().toISOString().split('T')[0]} 09:12:44] • mongodb.rules.state: Database schema initialized</div>
                       <div className="text-amber-500/80">[{new Date().toISOString().split('T')[0]} 12:00:00] • cron.check: Seeding validated successfully</div>
                       {dbStatus.connected ? (
-                        <div className="text-emerald-500/90 font-bold">[DB] • MySQL Live Connected to {dbStatus.databaseName}</div>
+                        <div className="text-emerald-500/90 font-bold">[DB] • MongoDB Live Connected to {dbStatus.databaseName}</div>
                       ) : (
-                        <div className="text-rose-500/90 font-bold">[DB] • MySQL Connection Offline. Using JSON Local Fallback.</div>
+                        <div className="text-rose-500/90 font-bold">[DB] • MongoDB Connection Offline. Using JSON Local Fallback.</div>
                       )}
                       <div className="text-slate-500">[{new Date().toISOString().split('T')[0]} 15:43:21] • auth.token: verified user skddissanayaka@gmail.com</div>
                       <div className="text-slate-500">[CLIENT] • Dev devServer hot-reload bypass active (DISABLE_HMR=true)</div>

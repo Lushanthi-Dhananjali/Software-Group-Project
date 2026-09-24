@@ -55,7 +55,7 @@ export async function signInWithGooglePopup() {
 }
 
 // -------------------------------------------------------------
-// BACKEND API CLIENT INTEGRATION (Replaces Firestore with MySQL)
+// BACKEND API CLIENT INTEGRATION (MongoDB-backed API)
 // -------------------------------------------------------------
 
 async function saveToServer(table: string, id: string, data: any) {
