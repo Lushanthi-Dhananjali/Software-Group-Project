@@ -1,0 +1,3 @@
+import { Language, PhysicsClass, StudyMaterial } from '../types';
+interface Props { lang: Language; onPublishMaterial: (material: Omit<StudyMaterial, 'id' | 'uploadedAt' | 'downloadsCount'>) => void; onPublishExam: (exam: any) => void; onPublishClass: (item: PhysicsClass, materials?: any[]) => void; classes: PhysicsClass[]; materials: StudyMaterial[]; onDeleteClass: (id: string) => void; onUpdateClass: (item: PhysicsClass, materials?: any[]) => void; }
+export default function AdminContentPublisher({ classes, materials }: Props) { return <section className="bg-slate-900 rounded-2xl p-6 text-white"><h3>Content Publisher</h3><p className="text-xs text-slate-400">{classes.length} classes and {materials.length} materials available.</p></section>; }

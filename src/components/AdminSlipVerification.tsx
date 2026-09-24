@@ -1,0 +1,3 @@
+import { Language, PaymentSlip } from '../types';
+interface Props { slips: PaymentSlip[]; lang: Language; onVerifySlip: (id: string, status: 'approved' | 'rejected', comments?: string) => void; }
+export default function AdminSlipVerification({ slips, onVerifySlip }: Props) { return <section className="bg-slate-900 rounded-2xl p-6 text-white space-y-3"><h3>Payment Slip Verification</h3>{slips.map(slip => <div key={slip.id} className="flex justify-between text-xs"><span>{slip.studentName} - {slip.status}</span>{slip.status === 'pending' && <span className="flex gap-2"><button onClick={() => onVerifySlip(slip.id, 'approved')}>Approve</button><button onClick={() => onVerifySlip(slip.id, 'rejected')}>Reject</button></span>}</div>)}</section>; }

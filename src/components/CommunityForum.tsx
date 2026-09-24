@@ -1,0 +1,2 @@
+import { ForumPost, Language } from '../types';
+export default function CommunityForum({ posts, lang }: { posts: ForumPost[]; lang: Language }) { return <section className="bg-slate-900 rounded-2xl p-6 text-white"><h3>Community Forum</h3><p className="text-xs text-slate-400">{posts.length} discussion posts</p></section>; }
