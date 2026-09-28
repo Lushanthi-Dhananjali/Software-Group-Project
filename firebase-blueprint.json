@@ -1,0 +1,214 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing roles and status.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "mobile": { "type": "string" },
+        "batch": { "type": "string" },
+        "role": { "type": "string" },
+        "indexNo": { "type": "string" },
+        "barcode": { "type": "string" },
+        "status": { "type": "string" },
+        "rejectionReason": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role", "indexNo", "status"]
+    },
+    "PhysicsClass": {
+      "title": "PhysicsClass",
+      "description": "Interactive physics class pathway.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "object" },
+        "batch": { "type": "string" },
+        "type": { "type": "string" },
+        "fee": { "type": "number" },
+        "weeklySchedule": { "type": "object" },
+        "streamUrl": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "whatsappLink": { "type": "string" },
+        "description": { "type": "object" }
+      },
+      "required": ["id", "name", "batch", "type", "fee"]
+    },
+    "Recording": {
+      "title": "Recording",
+      "description": "Class session recording link.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "classId": { "type": "string" },
+        "title": { "type": "object" },
+        "date": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "duration": { "type": "string" },
+        "bookmarks": { "type": "array" }
+      },
+      "required": ["id", "classId", "title", "videoUrl"]
+    },
+     "StudyMaterial": {
+      "title": "StudyMaterial",
+      "description": "Study material or PDF note.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "object" },
+        "moduleName": { "type": "string" },
+        "batch": { "type": "string" },
+        "classId": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "uploadedAt": { "type": "string" },
+        "downloadsCount": { "type": "number" },
+        "isFree": { "type": "boolean" }
+      },
+      "required": ["id", "title", "batch", "pdfUrl"]
+    },
+    "MCQExam": {
+      "title": "MCQExam",
+      "description": "Interactive MCQ exam paper.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "object" },
+        "batch": { "type": "string" },
+        "moduleName": { "type": "string" },
+        "durationMinutes": { "type": "number" },
+        "questions": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "batch", "questions"]
+    },
+    "ExamAttempt": {
+      "title": "ExamAttempt",
+      "description": "A student's exam paper attempt.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "examId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "score": { "type": "number" },
+        "correctCount": { "type": "number" },
+        "totalCount": { "type": "number" },
+        "answers": { "type": "object" },
+        "submittedAt": { "type": "string" }
+      },
+      "required": ["id", "examId", "studentId", "score"]
+    },
+    "ForumPost": {
+      "title": "ForumPost",
+      "description": "A discussion thread post.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "indexNo": { "type": "string" },
+        "topic": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "replies": { "type": "array" }
+      },
+      "required": ["id", "studentId", "studentName", "title", "content"]
+    },
+    "PaymentSlip": {
+      "title": "PaymentSlip",
+      "description": "Monthly fee payment slip submission.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "indexNo": { "type": "string" },
+        "batch": { "type": "string" },
+        "classId": { "type": "string" },
+        "className": { "type": "object" },
+        "month": { "type": "string" },
+        "slipImageUrl": { "type": "string" },
+        "uploadedAt": { "type": "string" },
+        "status": { "type": "string" },
+        "amountPaid": { "type": "number" },
+        "comments": { "type": "string" }
+      },
+      "required": ["id", "studentId", "classId", "slipImageUrl", "status"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Notice board announcement notice.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "object" },
+        "content": { "type": "object" },
+        "date": { "type": "string" },
+        "isPinned": { "type": "boolean" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "title", "content"]
+    },
+    "StudentFeedback": {
+      "title": "StudentFeedback",
+      "description": "Student comments and feedback shared publicly.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "batch": { "type": "string" },
+        "comment": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "comment", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "classes/{classId}": {
+      "schema": "PhysicsClass",
+      "description": "Physics class tracks"
+    },
+    "recordings/{recordingId}": {
+      "schema": "Recording",
+      "description": "Interactive class recordings"
+    },
+    "materials/{materialId}": {
+      "schema": "StudyMaterial",
+      "description": "Study materials and notes PDFs"
+    },
+    "exams/{examId}": {
+      "schema": "MCQExam",
+      "description": "Online interactive MCQ exams"
+    },
+    "attempts/{attemptId}": {
+      "schema": "ExamAttempt",
+      "description": "Student exam scorecard attempts"
+    },
+    "forums/{postId}": {
+      "schema": "ForumPost",
+      "description": "Student and tutor discussion threads"
+    },
+    "slips/{slipId}": {
+      "schema": "PaymentSlip",
+      "description": "Fee receipt submissions"
+    },
+    "announcements/{noticeId}": {
+      "schema": "Announcement",
+      "description": "Notice board entries"
+    },
+    "feedbacks/{feedbackId}": {
+      "schema": "StudentFeedback",
+      "description": "Student comment feedbacks"
+    }
+  }
+}
