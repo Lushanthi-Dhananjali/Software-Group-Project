@@ -98,6 +98,49 @@ export interface ExamAttempt {
   submittedAt: string;
 }
 
+export interface ExamPaperMCQ {
+  id: string;
+  question: string;
+  options: [string, string, string, string];
+}
+
+export interface ExamPaperSubQuestion {
+  id: string;
+  prompt: string;
+}
+
+export interface ExamPaperStructuredQuestion {
+  id: string;
+  prompt: string;
+  subQuestions: ExamPaperSubQuestion[];
+}
+
+export interface ExamPaper {
+  id: string;
+  title: string;
+  subject: string;
+  topic: string;
+  batch: Batch;
+  durationMinutes: number;
+  mcqQuestions: ExamPaperMCQ[];
+  structuredQuestions: ExamPaperStructuredQuestion[];
+  createdAt: string;
+  createdBy: string;
+  isPublished: boolean;
+}
+
+export interface ExamPaperSubmission {
+  id: string;
+  paperId: string;
+  studentId: string;
+  studentName: string;
+  studentIndexNo: string;
+  batch: Batch;
+  mcqAnswers: Record<string, number>;
+  structuredAnswers: Record<string, string>;
+  submittedAt: string;
+}
+
 export interface ForumPost {
   id: string;
   studentId: string;

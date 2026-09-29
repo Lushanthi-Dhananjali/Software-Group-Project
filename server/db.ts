@@ -47,6 +47,8 @@ const seedData: Record<string, any[]> = {
   recordings: INITIAL_RECORDINGS,
   materials: INITIAL_STUDY_MATERIALS,
   exams: INITIAL_EXAMS,
+  examPapers: [],
+  paperSubmissions: [],
   forums: INITIAL_FORUMS,
   slips: INITIAL_SLIPS,
   announcements: INITIAL_ANNOUNCEMENTS,
