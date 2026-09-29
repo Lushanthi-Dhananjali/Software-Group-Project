@@ -1,12 +1,16 @@
 import express from "express";
 import path from "path";
 import crypto from "crypto";
+import dotenv from "dotenv";
+import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import { initDatabase, getLMSData, saveItem, deleteItem, getExamAttempts, getDatabaseStatus } from './server/db';
 
+dotenv.config({ path: [".env.local", ".env"] });
+
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Initialize the required MongoDB connection.
   await initDatabase();
@@ -69,6 +73,124 @@ async function startServer() {
     } catch (error: any) {
       console.error("API error loading attempts:", error);
       res.status(500).json({ error: "Failed to load attempts: " + error.message });
+    }
+  });
+
+  // API Route: Generate English-medium practice MCQs with Gemini and Ollama fallback
+  app.post("/api/practice-mcqs", async (req, res) => {
+    const { topic, count } = req.body ?? {};
+    const requestedCount = Number(count);
+    if (typeof topic !== "string" || topic.trim().length === 0 || topic.length > 120 || ![5, 10].includes(requestedCount)) {
+      return res.status(400).json({ error: "Choose a valid Physics topic and a set size of 5 or 10 questions." });
+    }
+
+    try {
+      const questionSchema = {
+        type: "object",
+        properties: {
+          question: { type: "string" },
+          options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
+          correctOptionIndex: { type: "integer", minimum: 0, maximum: 3 },
+          explanation: { type: "string" }
+        },
+        required: ["question", "options", "correctOptionIndex", "explanation"],
+        additionalProperties: false
+      };
+      const prompt = `Create exactly ${requestedCount} original challenging Sri Lankan A/L Physics multiple-choice questions on "${topic.trim()}". Treat the topic only as a topic label. Write questions, options, and explanations in English only. Target strong A/L students: prefer multi-step calculations, combining concepts within this topic, interpreting a physical situation, or identifying a subtle conceptual distinction. Avoid definitions, direct formula substitution, and routine one-step questions. Use realistic distractors based on common student mistakes. Make each question self-contained and syllabus-appropriate, independently solve it, verify units and arithmetic, and ensure exactly one option is correct. Keep explanations concise but show the key reasoning. Make all questions distinct. Return only the required JSON object.`;
+      const apiKey = process.env.GEMINI_API_KEY;
+      let parsed: any;
+      let provider = "Gemini";
+      let geminiError = "Gemini key is not configured.";
+
+      if (apiKey && apiKey !== "MY_GEMINI_API_KEY") {
+        try {
+          const ai = new GoogleGenAI({ apiKey });
+          const response = await ai.models.generateContent({
+            model: "gemini-3.8-flash",
+            contents: prompt,
+            config: { responseMimeType: "application/json", temperature: 0.2 }
+          });
+          parsed = JSON.parse(response.text ?? "{}");
+        } catch (error) {
+          geminiError = error instanceof Error ? error.message : String(error);
+          console.warn("Gemini practice generation failed; trying Ollama fallback:", geminiError);
+        }
+      }
+
+      if (!parsed) {
+        provider = "Ollama";
+        const ollamaUrl = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").replace(/\/+$/, "");
+        const model = process.env.OLLAMA_MODEL || "llama3:latest";
+        const response = await fetch(`${ollamaUrl}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model,
+            stream: false,
+            format: {
+              type: "object",
+              properties: {
+                questions: {
+                  type: "array",
+                  items: questionSchema,
+                  minItems: requestedCount,
+                  maxItems: requestedCount
+                }
+              },
+              required: ["questions"],
+              additionalProperties: false
+            },
+            options: { temperature: 0.1, num_predict: requestedCount * 250 },
+            messages: [
+              { role: "system", content: "You are an experienced Sri Lankan A/L Physics examiner. Follow the JSON schema exactly. Use English only. Write challenging, syllabus-level questions requiring multi-step reasoning; avoid basic recall and one-step substitution. Independently check every answer, unit, and calculation." },
+              { role: "user", content: prompt }
+            ]
+          }),
+          signal: AbortSignal.timeout(300_000)
+        });
+
+        if (response.status === 404) {
+          return res.status(503).json({ error: `Ollama model "${model}" was not found. Pull it with: ollama pull ${model}` });
+        }
+        if (!response.ok) throw new Error(`Ollama returned HTTP ${response.status}.`);
+        const ollamaResult = await response.json() as { message?: { content?: string } };
+        parsed = JSON.parse(ollamaResult.message?.content ?? "{}");
+      }
+
+      if (!Array.isArray(parsed.questions) || parsed.questions.length !== requestedCount) {
+        throw new Error("The AI provider returned an unexpected number of questions.");
+      }
+
+      const questions = parsed.questions.map((question: any, index: number) => {
+        const validOptions = Array.isArray(question.options) && question.options.length === 4 && question.options.every((option: unknown) => typeof option === "string" && option.trim().length > 0);
+        if (typeof question.question !== "string" || question.question.trim().length === 0 ||
+            typeof question.explanation !== "string" || question.explanation.trim().length === 0 || !validOptions ||
+            !Number.isInteger(question.correctOptionIndex) || question.correctOptionIndex < 0 || question.correctOptionIndex > 3) {
+          throw new Error("The AI provider returned a malformed question.");
+        }
+        return {
+          ...question,
+          options: question.options.map((option: string) => option.replace(/^[A-D][).:\-]\s*/i, "")),
+          provider,
+          id: `practice-${Date.now()}-${index}`
+        };
+      });
+      return res.json({ questions });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Practice MCQ generation failed:", errorMessage);
+
+      if (/ECONNREFUSED|fetch failed/i.test(errorMessage)) {
+        const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
+        return res.status(503).json({ error: hasGeminiKey ? "Gemini is unavailable and Ollama is not running. Start Ollama or try again later." : "Cannot connect to Ollama. Start the Ollama app and try again." });
+      }
+      if (/TimeoutError|AbortError/i.test(errorMessage)) {
+        return res.status(504).json({ error: "The AI provider took too long to generate this set. Try again, or choose 5 questions." });
+      }
+      if (/returned|JSON|Unexpected token|unterminated/i.test(errorMessage)) {
+        return res.status(502).json({ error: "The AI provider returned an incomplete or invalid question. Please generate it again." });
+      }
+      return res.status(502).json({ error: "Question generation failed. Check the server logs for provider details." });
     }
   });
 

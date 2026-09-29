@@ -66,10 +66,12 @@ import AdminContentPublisher from './components/AdminContentPublisher';
 import AdminHomepageEditor from './components/AdminHomepageEditor';
 import SupportChat from './components/SupportChat';
 import AdminClassesStudents from './components/AdminClassesStudents';
+import PracticeMCQ from './components/PracticeMCQ';
 
 // Icons
 import {
   GraduationCap,
+  BrainCircuit,
   Globe,
   LogIn,
   LogOut,
@@ -260,7 +262,7 @@ export default function App() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Active Tab Routers
-  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages'>(() => {
+  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice'>(() => {
     try {
       const savedTab = localStorage.getItem('ap_student_tab');
       if (savedTab) return savedTab as any;
@@ -2328,6 +2330,7 @@ export default function App() {
                 {[
                   { id: 'profile', label: 'Student Profile & Center', icon: UserIcon },
                   { id: 'classes', label: t.activeLiveStream, icon: Video },
+                  { id: 'practice', label: lang === 'en' ? 'Practice MCQ' : 'MCQ පුහුණුව', icon: BrainCircuit },
                   { id: 'messages', label: lang === 'en' ? 'Live Support Chat' : 'සජීවී ගුරු සහය', icon: MessageSquare }
                 ].map((item) => {
                   const Icon = item.icon;
@@ -2993,6 +2996,16 @@ export default function App() {
           </div>
         </div>
       )}
+
+              {studentTab === 'practice' && (
+                <PracticeMCQ
+                  lang={lang}
+                  topics={[
+                    ...db.exams.map(exam => exam.moduleName),
+                    ...db.materials.map(material => material.moduleName)
+                  ]}
+                />
+              )}
 
               {/* STUDENT TAB 2: ACTIVE CLASSES & LIVE PLAYER */}
               {studentTab === 'classes' && (() => {
