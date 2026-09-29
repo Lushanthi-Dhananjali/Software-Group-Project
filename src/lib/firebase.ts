@@ -15,6 +15,8 @@ import {
   PaymentSlip, 
   Announcement,
   ExamAttempt,
+  ExamPaper,
+  ExamPaperSubmission,
   HomeSectionsVisibility,
   HomeContentSettings,
   ChatMessage,
@@ -74,6 +76,19 @@ async function saveToServer(table: string, id: string, data: any) {
   }
 }
 
+async function saveRequiredToServer(table: string, id: string, data: any) {
+  const res = await fetch('/api/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table, id, data })
+  });
+  if (!res.ok) {
+    const result = await res.json().catch(() => null);
+    throw new Error(result?.error || `Could not save ${table} record (HTTP ${res.status}).`);
+  }
+  return res.json();
+}
+
 async function deleteFromServer(table: string, id: string) {
   try {
     const res = await fetch('/api/delete', {
@@ -107,6 +122,8 @@ export async function fetchLMSData() {
       recordings: INITIAL_RECORDINGS,
       materials: INITIAL_STUDY_MATERIALS,
       exams: INITIAL_EXAMS,
+      examPapers: [],
+      paperSubmissions: [],
       forums: INITIAL_FORUMS,
       slips: INITIAL_SLIPS,
       announcements: INITIAL_ANNOUNCEMENTS,
@@ -184,6 +201,14 @@ export async function saveRecording(recording: Recording) {
 
 export async function saveExam(exam: MCQExam) {
   await saveToServer('exams', exam.id, exam);
+}
+
+export async function saveExamPaper(paper: ExamPaper) {
+  await saveRequiredToServer('examPapers', paper.id, paper);
+}
+
+export async function saveExamPaperSubmission(submission: ExamPaperSubmission) {
+  await saveRequiredToServer('paperSubmissions', submission.id, submission);
 }
 
 // -------------------------------------------------------------

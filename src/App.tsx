@@ -21,6 +21,8 @@ import {
   saveAnnouncement,
   deleteAnnouncement,
   saveExamAttempt,
+  saveExamPaper,
+  saveExamPaperSubmission,
   fetchExamAttempts,
   signInWithGooglePopup,
   saveHomeSectionsVisibility,
@@ -47,6 +49,8 @@ import {
   Batch,
   ForumReply,
   ExamAttempt,
+  ExamPaper,
+  ExamPaperSubmission,
   HomeSectionsVisibility,
   HomeContentSettings,
   Milestone,
@@ -67,6 +71,8 @@ import AdminHomepageEditor from './components/AdminHomepageEditor';
 import SupportChat from './components/SupportChat';
 import AdminClassesStudents from './components/AdminClassesStudents';
 import PracticeMCQ from './components/PracticeMCQ';
+import AdminExamPapers from './components/AdminExamPapers';
+import StudentExamPapers from './components/StudentExamPapers';
 
 // Icons
 import {
@@ -88,6 +94,7 @@ import {
   Video,
   MessageSquare,
   Calendar,
+  ClipboardList,
   ShieldAlert,
   DollarSign,
   AlertCircle,
@@ -262,7 +269,7 @@ export default function App() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Active Tab Routers
-  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice'>(() => {
+  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice' | 'papers'>(() => {
     try {
       const savedTab = localStorage.getItem('ap_student_tab');
       if (savedTab) return savedTab as any;
@@ -276,7 +283,7 @@ export default function App() {
     } catch {}
     return 'dashboard';
   });
-  const [adminTab, setAdminTab] = useState<'dashboard' | 'slips' | 'users' | 'publisher' | 'settings' | 'homepage' | 'messages' | 'superadmin' | 'classes-students' | 'feedback_approval'>(() => {
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'slips' | 'users' | 'publisher' | 'papers' | 'settings' | 'homepage' | 'messages' | 'superadmin' | 'classes-students' | 'feedback_approval'>(() => {
     try {
       const savedTab = localStorage.getItem('ap_admin_tab');
       if (savedTab) return savedTab as any;
@@ -471,6 +478,8 @@ export default function App() {
     saveLMSData('ap_recordings', db.recordings);
     saveLMSData('ap_materials', db.materials);
     saveLMSData('ap_exams', db.exams);
+    saveLMSData('ap_exam_papers', db.examPapers || []);
+    saveLMSData('ap_paper_submissions', db.paperSubmissions || []);
     saveLMSData('ap_forums', db.forums);
     saveLMSData('ap_slips', db.slips);
     saveLMSData('ap_announcements', db.announcements);
@@ -978,6 +987,24 @@ export default function App() {
       exams: [newExam, ...prev.exams]
     }));
     saveExam(newExam);
+  };
+
+  const handlePublishExamPaper = async (paper: Omit<ExamPaper, 'id' | 'createdAt'>) => {
+    if (loggedInUser?.role !== 'admin') {
+      throw new Error('Only admins can create and publish exam papers.');
+    }
+    const newPaper: ExamPaper = {
+      ...paper,
+      id: `paper-${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    await saveExamPaper(newPaper);
+    setDb(prev => ({ ...prev, examPapers: [newPaper, ...(prev.examPapers || [])] }));
+  };
+
+  const handleSubmitExamPaper = async (submission: ExamPaperSubmission) => {
+    await saveExamPaperSubmission(submission);
+    setDb(prev => ({ ...prev, paperSubmissions: [submission, ...(prev.paperSubmissions || [])] }));
   };
 
   // Create Class Track (Admin action)
@@ -2331,6 +2358,7 @@ export default function App() {
                   { id: 'profile', label: 'Student Profile & Center', icon: UserIcon },
                   { id: 'classes', label: t.activeLiveStream, icon: Video },
                   { id: 'practice', label: lang === 'en' ? 'Practice MCQ' : 'MCQ පුහුණුව', icon: BrainCircuit },
+                  { id: 'papers', label: lang === 'en' ? 'Exam Papers' : 'විභාග ප්‍රශ්න පත්‍ර', icon: ClipboardList },
                   { id: 'messages', label: lang === 'en' ? 'Live Support Chat' : 'සජීවී ගුරු සහය', icon: MessageSquare }
                 ].map((item) => {
                   const Icon = item.icon;
@@ -3004,6 +3032,16 @@ export default function App() {
                     ...db.exams.map(exam => exam.moduleName),
                     ...db.materials.map(material => material.moduleName)
                   ]}
+                />
+              )}
+
+              {studentTab === 'papers' && (
+                <StudentExamPapers
+                  lang={lang}
+                  currentUser={loggedInUser}
+                  papers={db.examPapers || []}
+                  submissions={(db.paperSubmissions || []).filter(submission => submission.studentId === loggedInUser.id)}
+                  onSubmitPaper={handleSubmitExamPaper}
                 />
               )}
 
@@ -4083,6 +4121,7 @@ export default function App() {
                       { id: 'classes-students', label: 'Classes & Student' },
                       { id: 'users', label: 'Student Directory' },
                       { id: 'publisher', label: 'Publish Content' },
+                      { id: 'papers', label: 'Exam Papers' },
                       { id: 'settings', label: 'Notice & Helplines' },
                       { id: 'homepage', label: 'Edit Homepage' },
                       { id: 'messages', label: 'Support Chat' },
@@ -4095,6 +4134,7 @@ export default function App() {
                       { id: 'classes-students', label: 'Classes & Student' },
                       { id: 'users', label: 'Student Directory' },
                       { id: 'publisher', label: 'Publish Content' },
+                      { id: 'papers', label: 'Exam Papers' },
                       { id: 'settings', label: 'Notice & Helplines' },
                       { id: 'homepage', label: 'Edit Homepage' },
                       { id: 'messages', label: 'Support Chat' },
@@ -4240,6 +4280,17 @@ export default function App() {
                 materials={db.materials}
                 onDeleteClass={handleDeleteClass}
                 onUpdateClass={handleUpdateClass}
+              />
+            )}
+
+            {(loggedInUser.role === 'admin' || loggedInUser.role === 'super-admin') && adminTab === 'papers' && (
+              <AdminExamPapers
+                lang={lang}
+                currentUser={loggedInUser}
+                papers={db.examPapers || []}
+                submissions={db.paperSubmissions || []}
+                users={db.users}
+                onPublishPaper={handlePublishExamPaper}
               />
             )}
 
