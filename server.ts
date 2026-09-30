@@ -4,7 +4,7 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
-import { initDatabase, getLMSData, saveItem, deleteItem, getExamAttempts, getDatabaseStatus } from './server/db';
+import { initDatabase, getLMSData, saveItem, deleteItem, deleteExamPaperWithSubmissions, getExamAttempts, getDatabaseStatus } from './server/db';
 
 dotenv.config({ path: [".env.local", ".env"] });
 
@@ -62,6 +62,18 @@ async function startServer() {
     } catch (error: any) {
       console.error("API error deleting item:", error);
       res.status(500).json({ error: "Failed to delete item: " + error.message });
+    }
+  });
+
+  // API Route: Delete one paper and its related submissions
+  app.delete("/api/exam-papers/:paperId", async (req, res) => {
+    try {
+      const result = await deleteExamPaperWithSubmissions(req.params.paperId);
+      if (!result.deletedPaper) return res.status(404).json({ error: "Exam paper not found." });
+      res.json({ success: true, deletedSubmissions: result.deletedSubmissions });
+    } catch (error: any) {
+      console.error("API error deleting exam paper:", error);
+      res.status(500).json({ error: "Failed to delete exam paper: " + error.message });
     }
   });
 

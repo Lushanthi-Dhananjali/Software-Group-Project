@@ -136,6 +136,16 @@ export async function deleteItem(collectionName: string, id: string) {
   return { success: true };
 }
 
+export async function deleteExamPaperWithSubmissions(paperId: string) {
+  const connectedDatabase = getDatabase();
+  const paperResult = await connectedDatabase.collection<any>('examPapers').deleteOne({ _id: paperId });
+  if (paperResult.deletedCount === 0) {
+    return { deletedPaper: false, deletedSubmissions: 0 };
+  }
+  const submissionsResult = await connectedDatabase.collection<any>('paperSubmissions').deleteMany({ paperId });
+  return { deletedPaper: true, deletedSubmissions: submissionsResult.deletedCount };
+}
+
 export async function getExamAttempts(studentId: string) {
   const connectedDatabase = getDatabase();
   const attempts = await connectedDatabase.collection('attempts').find({ studentId }).toArray();
