@@ -1029,7 +1029,7 @@ export default function App() {
     }
 
     if (isAdministrator) await deleteExamPaperSubmission(submission.id);
-    const owner = !isAdministrator && db.users.find(user => user.id === submission.studentId);
+    const owner = db.users.find(user => user.id === submission.studentId);
     const updatedOwner = owner ? {
       ...owner,
       hiddenExamPaperIds: [...new Set([...(owner.hiddenExamPaperIds || []), submission.paperId])]
@@ -1044,6 +1044,24 @@ export default function App() {
       users: updatedOwner ? prev.users.map(user => user.id === updatedOwner.id ? updatedOwner : user) : prev.users
     }));
     if (updatedOwner && loggedInUser?.id === updatedOwner.id) setLoggedInUser(updatedOwner);
+  };
+
+  const handleRepublishExamPaper = async (paperId: string, studentId: string) => {
+    if (loggedInUser?.role !== 'admin') {
+      throw new Error('Only admins can republish exam papers for students.');
+    }
+    const student = db.users.find(user => user.id === studentId && user.role === 'student');
+    if (!student) throw new Error('Student not found.');
+
+    const updatedStudent = {
+      ...student,
+      hiddenExamPaperIds: (student.hiddenExamPaperIds || []).filter(id => id !== paperId)
+    };
+    await saveRequiredUser(updatedStudent);
+    setDb(prev => ({
+      ...prev,
+      users: prev.users.map(user => user.id === studentId ? updatedStudent : user)
+    }));
   };
 
   // Create Class Track (Admin action)
@@ -4333,6 +4351,7 @@ export default function App() {
                 onPublishPaper={handlePublishExamPaper}
                 onDeletePaper={handleDeleteExamPaper}
                 onDeleteSubmission={handleDeleteExamPaperSubmission}
+                onRepublishPaper={handleRepublishExamPaper}
               />
             )}
 
