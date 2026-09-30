@@ -37,3 +37,5 @@ Exam papers and student submissions use the MongoDB database already configured 
 - `paperSubmissions` stores each student's selected MCQ options and written answers, linked by `paperId`.
 
 To inspect them, open the configured database in MongoDB Atlas **Data Explorer** or MongoDB Compass, then select `examPapers` or `paperSubmissions`. Collections appear after the first paper is published or submitted; they do not need manual setup. Keep database credentials in `.env` and never publish them in source control.
+
+Admins can create papers; admins and super-admins can view papers and submissions. Delete controls act on one selected record at a time. Deleting a paper also removes its linked submissions. Deleting one submission removes that student's paper from their own list without deleting the published paper for other students.

@@ -22,6 +22,7 @@ export interface User {
   rejectionReason?: string;
   createdAt: string;
   manuallyEnrolledClasses?: string[];
+  hiddenExamPaperIds?: string[];
   password?: string;
 }
 

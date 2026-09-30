@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { CheckCircle2, ClipboardList, FilePlus2, LoaderCircle, Sparkles } from 'lucide-react';
+import { CheckCircle2, ClipboardList, FilePlus2, LoaderCircle, Sparkles, Trash2 } from 'lucide-react';
 import { ExamPaper, ExamPaperSubmission, Language, User } from '../types';
 
 type PaperDraft = Omit<ExamPaper, 'id' | 'createdAt' | 'createdBy' | 'isPublished'>;
@@ -12,9 +12,11 @@ interface AdminExamPapersProps {
   submissions: ExamPaperSubmission[];
   users: User[];
   onPublishPaper: (paper: Omit<ExamPaper, 'id' | 'createdAt'>) => Promise<void>;
+  onDeletePaper: (paperId: string) => Promise<void>;
+  onDeleteSubmission: (submission: ExamPaperSubmission) => Promise<void>;
 }
 
-export default function AdminExamPapers({ lang, currentUser, papers, submissions, users, onPublishPaper }: AdminExamPapersProps) {
+export default function AdminExamPapers({ lang, currentUser, papers, submissions, users, onPublishPaper, onDeletePaper, onDeleteSubmission }: AdminExamPapersProps) {
   const isSinhala = lang === 'si';
   const canCreatePapers = currentUser.role === 'admin';
   const [activeView, setActiveView] = useState<'create' | 'papers' | 'submissions'>(canCreatePapers ? 'create' : 'papers');
@@ -27,6 +29,7 @@ export default function AdminExamPapers({ lang, currentUser, papers, submissions
   const [selectedSubmissionId, setSelectedSubmissionId] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [deletingId, setDeletingId] = useState('');
   const [error, setError] = useState('');
 
   const generateDraft = async (event: FormEvent) => {
@@ -71,6 +74,37 @@ export default function AdminExamPapers({ lang, currentUser, papers, submissions
   const selectedPaper = selectedSubmission && papers.find(paper => paper.id === selectedSubmission.paperId);
   const selectedStudent = selectedSubmission && users.find(user => user.id === selectedSubmission.studentId);
 
+  const handleDeletePaper = async (paper: ExamPaper) => {
+    const submissionCount = submissions.filter(submission => submission.paperId === paper.id).length;
+    const cascadeMessage = submissionCount ? ` Its ${submissionCount} submission${submissionCount === 1 ? '' : 's'} will also be deleted.` : '';
+    if (!window.confirm(`Delete "${paper.title}" for everyone?${cascadeMessage} This cannot be undone.`)) return;
+    setDeletingId(paper.id);
+    setError('');
+    try {
+      await onDeletePaper(paper.id);
+      if (selectedSubmission?.paperId === paper.id) setSelectedSubmissionId('');
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Could not delete the paper. Please try again.');
+    } finally {
+      setDeletingId('');
+    }
+  };
+
+  const handleDeleteSubmission = async (submission: ExamPaperSubmission) => {
+    const paper = papers.find(item => item.id === submission.paperId);
+    if (!window.confirm(`Delete ${submission.studentName}'s submission for "${paper?.title || 'this paper'}"? This cannot be undone.`)) return;
+    setDeletingId(submission.id);
+    setError('');
+    try {
+      await onDeleteSubmission(submission);
+      if (selectedSubmissionId === submission.id) setSelectedSubmissionId('');
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Could not delete the submission. Please try again.');
+    } finally {
+      setDeletingId('');
+    }
+  };
+
   return (
     <section className="space-y-5">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -92,6 +126,8 @@ export default function AdminExamPapers({ lang, currentUser, papers, submissions
           </button>
         </div>
       </header>
+
+      {error && activeView !== 'create' && <p role="alert" className="rounded-lg border border-rose-500/25 bg-rose-500/10 p-3 text-xs text-rose-200">{error}</p>}
 
       {activeView === 'create' ? (
         <div className="space-y-5">
@@ -178,7 +214,12 @@ export default function AdminExamPapers({ lang, currentUser, papers, submissions
                   <h3 className="text-sm font-bold text-white">{paper.title}</h3>
                   <p className="mt-1 text-[10px] text-slate-400">{paper.subject}{paper.topic ? ` · ${paper.topic}` : ''} · {paper.batch === 'All' ? 'All batches' : `${paper.batch} A/L`} · {paper.durationMinutes} min</p>
                 </div>
-                <span className="text-xs text-slate-400">{submissions.filter(submission => submission.paperId === paper.id).length} submissions</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-400">{submissions.filter(submission => submission.paperId === paper.id).length} submissions</span>
+                  <button type="button" title="Delete this paper" aria-label={`Delete ${paper.title}`} disabled={deletingId === paper.id} onClick={() => handleDeletePaper(paper)} className="rounded-md border border-rose-500/25 p-2 text-rose-300 hover:bg-rose-500/10 disabled:opacity-50">
+                    {deletingId === paper.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <details className="mt-4 border-t border-slate-800 pt-3">
                 <summary className="cursor-pointer text-xs font-semibold text-amber-300">View paper · {paper.mcqQuestions.length} MCQs · {paper.structuredQuestions.length} structured questions</summary>
@@ -203,11 +244,16 @@ export default function AdminExamPapers({ lang, currentUser, papers, submissions
               const paper = papers.find(item => item.id === submission.paperId);
               const student = users.find(user => user.id === submission.studentId);
               return (
-                <button key={submission.id} type="button" onClick={() => setSelectedSubmissionId(submission.id)} className={`w-full rounded-lg border p-4 text-left ${selectedSubmissionId === submission.id ? 'border-amber-500/60 bg-amber-500/5' : 'border-slate-800 bg-slate-900 hover:border-slate-700'}`}>
-                  <span className="block truncate text-sm font-semibold text-white">{student?.name || submission.studentName}</span>
-                  <span className="mt-1 block truncate text-xs text-slate-400">{paper?.title || 'Paper'} · {submission.studentIndexNo}</span>
-                  <span className="mt-2 block text-[10px] font-mono text-slate-500">{new Date(submission.submittedAt).toLocaleString()}</span>
-                </button>
+                <div key={submission.id} className={`flex items-center gap-2 rounded-lg border p-2 ${selectedSubmissionId === submission.id ? 'border-amber-500/60 bg-amber-500/5' : 'border-slate-800 bg-slate-900 hover:border-slate-700'}`}>
+                  <button type="button" onClick={() => setSelectedSubmissionId(submission.id)} className="min-w-0 flex-1 p-2 text-left">
+                    <span className="block truncate text-sm font-semibold text-white">{student?.name || submission.studentName}</span>
+                    <span className="mt-1 block truncate text-xs text-slate-400">{paper?.title || 'Paper'} · {submission.studentIndexNo}</span>
+                    <span className="mt-2 block text-[10px] font-mono text-slate-500">{new Date(submission.submittedAt).toLocaleString()}</span>
+                  </button>
+                  <button type="button" title="Delete this submission" aria-label={`Delete ${submission.studentName}'s submission`} disabled={deletingId === submission.id} onClick={() => handleDeleteSubmission(submission)} className="shrink-0 rounded-md border border-rose-500/25 p-2 text-rose-300 hover:bg-rose-500/10 disabled:opacity-50">
+                    {deletingId === submission.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </button>
+                </div>
               );
             })}
           </div>

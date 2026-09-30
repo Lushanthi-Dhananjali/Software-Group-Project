@@ -89,6 +89,36 @@ async function saveRequiredToServer(table: string, id: string, data: any) {
   return res.json();
 }
 
+async function deleteRequiredFromServer(table: string, id: string) {
+  const res = await fetch('/api/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table, id })
+  });
+  if (!res.ok) {
+    const result = await res.json().catch(() => null);
+    throw new Error(result?.error || `Could not delete ${table} record (HTTP ${res.status}).`);
+  }
+  return res.json();
+}
+
+export async function deleteExamPaper(paperId: string) {
+  const res = await fetch(`/api/exam-papers/${encodeURIComponent(paperId)}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const result = await res.json().catch(() => null);
+    throw new Error(result?.error || `Could not delete exam paper (HTTP ${res.status}).`);
+  }
+  return res.json() as Promise<{ success: boolean; deletedSubmissions: number }>;
+}
+
+export async function deleteExamPaperSubmission(submissionId: string) {
+  return deleteRequiredFromServer('paperSubmissions', submissionId);
+}
+
+export async function saveRequiredUser(user: User) {
+  return saveRequiredToServer('users', user.id, user);
+}
+
 async function deleteFromServer(table: string, id: string) {
   try {
     const res = await fetch('/api/delete', {

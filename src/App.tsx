@@ -23,6 +23,9 @@ import {
   saveExamAttempt,
   saveExamPaper,
   saveExamPaperSubmission,
+  deleteExamPaper,
+  deleteExamPaperSubmission,
+  saveRequiredUser,
   fetchExamAttempts,
   signInWithGooglePopup,
   saveHomeSectionsVisibility,
@@ -1005,6 +1008,42 @@ export default function App() {
   const handleSubmitExamPaper = async (submission: ExamPaperSubmission) => {
     await saveExamPaperSubmission(submission);
     setDb(prev => ({ ...prev, paperSubmissions: [submission, ...(prev.paperSubmissions || [])] }));
+  };
+
+  const handleDeleteExamPaper = async (paperId: string) => {
+    if (loggedInUser?.role !== 'admin' && loggedInUser?.role !== 'super-admin') {
+      throw new Error('Only administrators can delete exam papers.');
+    }
+    await deleteExamPaper(paperId);
+    setDb(prev => ({
+      ...prev,
+      examPapers: (prev.examPapers || []).filter(paper => paper.id !== paperId),
+      paperSubmissions: (prev.paperSubmissions || []).filter(submission => submission.paperId !== paperId)
+    }));
+  };
+
+  const handleDeleteExamPaperSubmission = async (submission: ExamPaperSubmission) => {
+    const isAdministrator = loggedInUser?.role === 'admin' || loggedInUser?.role === 'super-admin';
+    if (!loggedInUser || (!isAdministrator && (loggedInUser.role !== 'student' || submission.studentId !== loggedInUser.id))) {
+      throw new Error('You can only delete your own paper submission.');
+    }
+
+    if (isAdministrator) await deleteExamPaperSubmission(submission.id);
+    const owner = !isAdministrator && db.users.find(user => user.id === submission.studentId);
+    const updatedOwner = owner ? {
+      ...owner,
+      hiddenExamPaperIds: [...new Set([...(owner.hiddenExamPaperIds || []), submission.paperId])]
+    } : null;
+    if (updatedOwner) await saveRequiredUser(updatedOwner);
+
+    setDb(prev => ({
+      ...prev,
+      paperSubmissions: isAdministrator
+        ? (prev.paperSubmissions || []).filter(item => item.id !== submission.id)
+        : prev.paperSubmissions,
+      users: updatedOwner ? prev.users.map(user => user.id === updatedOwner.id ? updatedOwner : user) : prev.users
+    }));
+    if (updatedOwner && loggedInUser?.id === updatedOwner.id) setLoggedInUser(updatedOwner);
   };
 
   // Create Class Track (Admin action)
@@ -3042,6 +3081,7 @@ export default function App() {
                   papers={db.examPapers || []}
                   submissions={(db.paperSubmissions || []).filter(submission => submission.studentId === loggedInUser.id)}
                   onSubmitPaper={handleSubmitExamPaper}
+                  onDeleteSubmission={handleDeleteExamPaperSubmission}
                 />
               )}
 
@@ -4291,6 +4331,8 @@ export default function App() {
                 submissions={db.paperSubmissions || []}
                 users={db.users}
                 onPublishPaper={handlePublishExamPaper}
+                onDeletePaper={handleDeleteExamPaper}
+                onDeleteSubmission={handleDeleteExamPaperSubmission}
               />
             )}
 
