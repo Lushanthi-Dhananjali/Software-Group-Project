@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { CheckCircle2, ClipboardList, FilePlus2, LoaderCircle, Sparkles, Trash2 } from 'lucide-react';
+import { CheckCircle2, ClipboardList, FilePlus2, LoaderCircle, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { ExamPaper, ExamPaperSubmission, Language, User } from '../types';
 
 type PaperDraft = Omit<ExamPaper, 'id' | 'createdAt' | 'createdBy' | 'isPublished'>;
@@ -14,9 +14,10 @@ interface AdminExamPapersProps {
   onPublishPaper: (paper: Omit<ExamPaper, 'id' | 'createdAt'>) => Promise<void>;
   onDeletePaper: (paperId: string) => Promise<void>;
   onDeleteSubmission: (submission: ExamPaperSubmission) => Promise<void>;
+  onRepublishPaper: (paperId: string, studentId: string) => Promise<void>;
 }
 
-export default function AdminExamPapers({ lang, currentUser, papers, submissions, users, onPublishPaper, onDeletePaper, onDeleteSubmission }: AdminExamPapersProps) {
+export default function AdminExamPapers({ lang, currentUser, papers, submissions, users, onPublishPaper, onDeletePaper, onDeleteSubmission, onRepublishPaper }: AdminExamPapersProps) {
   const isSinhala = lang === 'si';
   const canCreatePapers = currentUser.role === 'admin';
   const [activeView, setActiveView] = useState<'create' | 'papers' | 'submissions'>(canCreatePapers ? 'create' : 'papers');
@@ -30,6 +31,7 @@ export default function AdminExamPapers({ lang, currentUser, papers, submissions
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [deletingId, setDeletingId] = useState('');
+  const [republishingId, setRepublishingId] = useState('');
   const [error, setError] = useState('');
 
   const generateDraft = async (event: FormEvent) => {
@@ -102,6 +104,19 @@ export default function AdminExamPapers({ lang, currentUser, papers, submissions
       setError(deleteError instanceof Error ? deleteError.message : 'Could not delete the submission. Please try again.');
     } finally {
       setDeletingId('');
+    }
+  };
+
+  const handleRepublishPaper = async (paper: ExamPaper, student: User) => {
+    const actionId = `${paper.id}:${student.id}`;
+    setRepublishingId(actionId);
+    setError('');
+    try {
+      await onRepublishPaper(paper.id, student.id);
+    } catch (republishError) {
+      setError(republishError instanceof Error ? republishError.message : 'Could not republish this paper. Please try again.');
+    } finally {
+      setRepublishingId('');
     }
   };
 
@@ -221,6 +236,22 @@ export default function AdminExamPapers({ lang, currentUser, papers, submissions
                   </button>
                 </div>
               </div>
+              {canCreatePapers && users.some(user => user.role === 'student' && user.hiddenExamPaperIds?.includes(paper.id)) && (
+                <div className="mt-4 flex flex-col gap-2 border-t border-slate-800 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-slate-400">Hidden from {users.filter(user => user.role === 'student' && user.hiddenExamPaperIds?.includes(paper.id)).length} student(s)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {users.filter(user => user.role === 'student' && user.hiddenExamPaperIds?.includes(paper.id)).map(student => {
+                      const actionId = `${paper.id}:${student.id}`;
+                      return (
+                        <button key={student.id} type="button" disabled={republishingId === actionId} onClick={() => handleRepublishPaper(paper, student)} className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 px-2.5 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50">
+                          {republishingId === actionId ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                          Republish for {student.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <details className="mt-4 border-t border-slate-800 pt-3">
                 <summary className="cursor-pointer text-xs font-semibold text-amber-300">View paper · {paper.mcqQuestions.length} MCQs · {paper.structuredQuestions.length} structured questions</summary>
                 <div className="mt-4 space-y-4">
