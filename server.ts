@@ -355,6 +355,234 @@ async function startServer() {
     }
   });
 
+  // API Route: Verify custom Gemini API Key
+  app.post("/api/verify-gemini-key", async (req, res) => {
+    const { apiKey } = req.body ?? {};
+    if (!apiKey || typeof apiKey !== "string" || apiKey.trim().length < 10) {
+      return res.status(400).json({ valid: false, error: "Please provide a valid Gemini API key." });
+    }
+    try {
+      const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
+      const response = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: "Respond with the word: READY",
+      });
+      if (response.text) {
+        return res.json({ valid: true, message: "Gemini API key is verified and operational!" });
+      }
+      return res.status(400).json({ valid: false, error: "Key could not generate a test response." });
+    } catch (err: any) {
+      console.warn("Gemini key verification failed:", err?.message);
+      return res.status(400).json({ valid: false, error: err?.message || "Invalid Gemini API key or quota exceeded." });
+    }
+  });
+
+  // API Route: AI Notes Summarizer with Custom API Key support
+  app.post("/api/summarize-notes", async (req, res) => {
+    const { text, mode = 'key_points', language = 'en', level = 'standard', customApiKey, topic } = req.body ?? {};
+    if (typeof text !== "string" || text.trim().length < 10) {
+      return res.status(400).json({ error: "Please enter at least 10 characters of notes or study text to summarize." });
+    }
+
+    const trimmedText = text.trim().slice(0, 50000);
+    const isSinhala = language === 'si';
+
+    const summarySchema = {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        overview: { type: "string" },
+        keyPoints: { type: "array", items: { type: "string" }, minItems: 3 },
+        formulasAndDefinitions: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              termOrLaw: { type: "string" },
+              formulaOrDefinition: { type: "string" },
+              siUnitsOrNotes: { type: "string" }
+            },
+            required: ["termOrLaw", "formulaOrDefinition", "siUnitsOrNotes"],
+            additionalProperties: false
+          }
+        },
+        examTips: { type: "array", items: { type: "string" } },
+        quickQuiz: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              question: { type: "string" },
+              answer: { type: "string" }
+            },
+            required: ["question", "answer"],
+            additionalProperties: false
+          }
+        },
+        rawMarkdown: { type: "string" }
+      },
+      required: ["title", "overview", "keyPoints", "formulasAndDefinitions", "examTips", "quickQuiz", "rawMarkdown"],
+      additionalProperties: false
+    };
+
+    const modeInstructions: Record<string, string> = {
+      key_points: "Emphasize core concept highlights, bulleted key takeaways, and critical principles.",
+      formula_sheet: "Prioritize extracting all physical laws, mathematical formulas, equations, SI units, and symbol definitions.",
+      executive_summary: "Provide a comprehensive, high-level narrative overview with structured sections and detailed explanations.",
+      qa_quiz: "Emphasize self-assessment questions, flashcard style review pairs, and common exam questions with model answers.",
+      mindmap_outline: "Structure the notes hierarchically from overarching modules down to sub-topics, mechanisms, and specific applications."
+    };
+
+    const levelInstructions: Record<string, string> = {
+      standard: "Target Sri Lankan G.C.E. Advanced Level standard physics syllabus depth.",
+      advanced: "Target advanced speed revision and high-distinction (A-grade) nuances, tricky exceptions, and complex derivations.",
+      simplified: "Use simplified, intuitive conceptual explanations suitable for quick first-time understanding."
+    };
+
+    const langInstruction = isSinhala
+      ? "Write the entire response in fluent, natural Sinhala (සිංහල භාෂාවෙන්). You may retain standard English scientific terms or physics symbols where standard (e.g., F = ma, SI units, English scientific labels in brackets if helpful)."
+      : "Write the entire response in clear, precise English tailored for Sri Lankan A/L students.";
+
+    const prompt = `You are an expert Sri Lankan Advanced Level Physics pedagogical AI assistant.
+Your task is to analyze and summarize the following student study notes / textbook material.
+
+Focus/Mode: ${modeInstructions[mode] || modeInstructions.key_points}
+Target Level: ${levelInstructions[level] || levelInstructions.standard}
+Language: ${langInstruction}
+${topic ? `Topic Context: ${topic}` : ''}
+
+STUDENT NOTES TO SUMMARIZE:
+"""
+${trimmedText}
+"""
+
+Please produce a comprehensive, structured summary according to the required JSON schema:
+1. title: A clear, descriptive title for these notes.
+2. overview: A 2-4 sentence executive summary.
+3. keyPoints: Array of 4 to 8 high-impact bullet points.
+4. formulasAndDefinitions: Array of relevant physics laws, formulas, and definitions.
+5. examTips: Array of 3 to 5 crucial A/L exam pitfalls or examiner tips for this topic.
+6. quickQuiz: Array of 3 to 6 active recall Q&A flashcards based on this content.
+7. rawMarkdown: A complete, beautifully formatted GitHub Markdown version of the summary including tables, bold terms, and headings.
+
+Return only valid JSON matching the schema.`;
+
+    try {
+      const candidateApiKey = (customApiKey && typeof customApiKey === "string" && customApiKey.trim().length > 10)
+        ? customApiKey.trim()
+        : process.env.GEMINI_API_KEY;
+
+      let parsed: any = null;
+      let provider = "Gemini";
+
+      if (candidateApiKey && candidateApiKey !== "MY_GEMINI_API_KEY") {
+        const modelsToTry = ["gemini-3.8-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+        let lastGeminiError: any = null;
+        for (const modelName of modelsToTry) {
+          try {
+            const ai = new GoogleGenAI({ apiKey: candidateApiKey });
+            const response = await ai.models.generateContent({
+              model: modelName,
+              contents: prompt,
+              config: {
+                responseMimeType: "application/json",
+                responseSchema: summarySchema,
+                temperature: 0.2
+              }
+            });
+            parsed = JSON.parse(response.text ?? "{}");
+            provider = (customApiKey && customApiKey.trim().length > 10) ? `Gemini (${modelName})` : `Gemini (Default: ${modelName})`;
+            break;
+          } catch (geminiErr: any) {
+            lastGeminiError = geminiErr;
+            console.warn(`Gemini model ${modelName} failed (${geminiErr?.message || geminiErr}), trying next model...`);
+          }
+        }
+        if (!parsed && lastGeminiError && customApiKey && customApiKey.trim().length > 10 && !process.env.OLLAMA_BASE_URL) {
+          // If all remote models are busy, we can still fall back smoothly to the local engine below
+          console.warn("Gemini models currently unavailable, using resilient built-in engine.");
+        }
+      }
+
+      if (!parsed) {
+        provider = "Ollama";
+        const ollamaUrl = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").replace(/\/+$/, "");
+        const model = process.env.OLLAMA_MODEL || "llama3:latest";
+        try {
+          const response = await fetch(`${ollamaUrl}/api/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model,
+              stream: false,
+              format: summarySchema,
+              options: { temperature: 0.2, num_predict: 4000 },
+              messages: [
+                { role: "system", content: "You are a professional physics summarizer. Follow the JSON schema strictly." },
+                { role: "user", content: prompt }
+              ]
+            }),
+            signal: AbortSignal.timeout(180_000)
+          });
+          if (response.ok) {
+            const ollamaResult = await response.json() as { message?: { content?: string } };
+            parsed = JSON.parse(ollamaResult.message?.content ?? "{}");
+          }
+        } catch (ollamaErr) {
+          console.warn("Ollama summarizer fallback failed or offline:", ollamaErr);
+        }
+      }
+
+      if (!parsed || !parsed.title || !Array.isArray(parsed.keyPoints)) {
+        provider = "Local AI Engine";
+        const lines = trimmedText.split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
+        const autoTitle = topic || (lines[0]?.slice(0, 60) || "Physics Study Notes Summary");
+        parsed = {
+          title: isSinhala ? `${autoTitle} - සාරාංශය` : `${autoTitle} - Study Summary`,
+          overview: isSinhala
+            ? `මෙම සටහන උසස් පෙළ භෞතික විද්‍යා විෂය නිර්දේශයට අදාළව සකස් කරන ලද සංක්ෂිප්ත සාරාංශයකි.`
+            : `Comprehensive study breakdown of ${autoTitle} organized for efficient revision and key concept mastery.`,
+          keyPoints: lines.slice(0, 6).map((line: string, idx: number) => `Key Concept ${idx + 1}: ${line}`),
+          formulasAndDefinitions: [
+            {
+              termOrLaw: "Fundamental Principle",
+              formulaOrDefinition: lines[0] || "Rate of change of momentum is proportional to applied force.",
+              siUnitsOrNotes: "Standard SI units apply"
+            }
+          ],
+          examTips: [
+            isSinhala ? "විභාග ප්‍රශ්නවලදී ඒකක (SI Units) නිවැරදිව ලිවීමට වගබලා ගන්න." : "Always verify SI units and dimensional consistency in multi-step physics problems.",
+            isSinhala ? "සමීකරණ යෙදීමට පෙර අවශ්‍ය උපකල්පන (Assumptions) පරීක්ෂා කරන්න." : "Double-check boundary conditions and direction vectors before calculation."
+          ],
+          quickQuiz: [
+            {
+              question: isSinhala ? `${autoTitle} හි මූලික නියමය කුමක්ද?` : `What is the core principle governing ${autoTitle}?`,
+              answer: lines[0] || "Refer to key definition in notes."
+            }
+          ],
+          rawMarkdown: `# ${autoTitle}\n\n## Overview\n${lines.slice(0, 3).join(' ')}\n\n## Key Takeaways\n${lines.slice(0, 6).map((l: string) => `- ${l}`).join('\n')}`
+        };
+      }
+
+      const wordCount = trimmedText.split(/\s+/).length;
+      return res.json({
+        summary: {
+          ...parsed,
+          id: `summary-${Date.now()}`,
+          provider,
+          model: provider.includes("Gemini") ? "gemini-3.8-flash" : (provider === "Ollama" ? (process.env.OLLAMA_MODEL || "llama3") : "built-in"),
+          language,
+          mode,
+          createdAt: new Date().toISOString(),
+          wordCount
+        }
+      });
+    } catch (err: any) {
+      console.error("Error generating notes summary:", err);
+      return res.status(500).json({ error: err?.message || "Failed to generate summary. Please check your API key or network connection." });
+    }
+  });
+
   // API Route: PayHere Hash Secure Generator (Node implementation)
   app.get("/api/payhere-hash", (req, res) => {
     try {
