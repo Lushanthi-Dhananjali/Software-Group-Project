@@ -10,7 +10,9 @@ import {
   INITIAL_SLIPS,
   INITIAL_ANNOUNCEMENTS,
   INITIAL_CHATS,
-  INITIAL_FEEDBACKS
+  INITIAL_FEEDBACKS,
+  INITIAL_ASSIGNMENTS,
+  INITIAL_ASSIGNMENT_SUBMISSIONS
 } from '../src/data/mockData';
 
 dotenv.config();
@@ -55,6 +57,8 @@ const seedData: Record<string, any[]> = {
   chats: INITIAL_CHATS,
   feedbacks: INITIAL_FEEDBACKS,
   attempts: [],
+  assignments: INITIAL_ASSIGNMENTS,
+  assignmentSubmissions: INITIAL_ASSIGNMENT_SUBMISSIONS,
   settings: initialSettings
 };
 
@@ -144,6 +148,16 @@ export async function deleteExamPaperWithSubmissions(paperId: string) {
   }
   const submissionsResult = await connectedDatabase.collection<any>('paperSubmissions').deleteMany({ paperId });
   return { deletedPaper: true, deletedSubmissions: submissionsResult.deletedCount };
+}
+
+export async function deleteAssignmentWithSubmissions(assignmentId: string) {
+  const connectedDatabase = getDatabase();
+  const assignmentResult = await connectedDatabase.collection<any>('assignments').deleteOne({ _id: assignmentId });
+  if (assignmentResult.deletedCount === 0) {
+    return { deletedAssignment: false, deletedSubmissions: 0 };
+  }
+  const submissionsResult = await connectedDatabase.collection<any>('assignmentSubmissions').deleteMany({ assignmentId });
+  return { deletedAssignment: true, deletedSubmissions: submissionsResult.deletedCount };
 }
 
 export async function getExamAttempts(studentId: string) {

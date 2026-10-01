@@ -1,4 +1,4 @@
-import { User, PhysicsClass, Recording, StudyMaterial, MCQExam, ForumPost, PaymentSlip, Announcement, ChatMessage, StudentFeedback } from '../types';
+import { User, PhysicsClass, Recording, StudyMaterial, MCQExam, ForumPost, PaymentSlip, Announcement, ChatMessage, StudentFeedback, Assignment, AssignmentSubmission } from '../types';
 
 // Comprehensive translations dictionary for bilingual toggle (English & Sinhala)
 export const TRANSLATIONS = {
@@ -799,6 +799,326 @@ export const INITIAL_FEEDBACKS: StudentFeedback[] = [
   }
 ];
 
+const sampleMarkingSchemeSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="%230f172a"/><rect x="20" y="20" width="560" height="360" rx="12" fill="%231e293b" stroke="%23f59e0b" stroke-width="2"/><text x="300" y="60" fill="%23f59e0b" font-size="20" font-family="sans-serif" font-weight="bold" text-anchor="middle">OFFICIAL A/L PHYSICS MARKING SCHEME</text><text x="300" y="85" fill="%2394a3b8" font-size="12" font-family="sans-serif" text-anchor="middle">30-MCQ Assignment Key • Advanced Level Syllabus</text><line x1="40" y1="100" x2="560" y2="100" stroke="%23334155" stroke-width="1"/><g fill="%23ffffff" font-size="11" font-family="monospace"><text x="60" y="130">Q01: A   Q06: B   Q11: C   Q16: A   Q21: D   Q26: A</text><text x="60" y="160">Q02: C   Q07: D   Q12: A   Q17: C   Q22: B   Q27: C</text><text x="60" y="190">Q03: B   Q08: A   Q13: D   Q18: B   Q23: A   Q28: B</text><text x="60" y="220">Q04: A   Q09: C   Q14: B   Q19: D   Q24: C   Q29: D</text><text x="60" y="250">Q05: D   Q10: B   Q15: A   Q20: A   Q25: D   Q30: A</text></g><rect x="60" y="280" width="480" height="70" rx="8" fill="%230f172a" stroke="%23334155"/><text x="80" y="305" fill="%2310b981" font-size="12" font-family="sans-serif" font-weight="bold">Evaluation Instructions:</text><text x="80" y="325" fill="%23cbd5e1" font-size="11" font-family="sans-serif">• 1 mark per correct answer (Total: 30 marks)</text><text x="80" y="340" fill="%23cbd5e1" font-size="11" font-family="sans-serif">• Dark handwriting shading / clear dip draw recognized by optical scanner</text></svg>`;
+
+const sampleStudentSheetSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="%23f8fafc"/><rect x="25" y="25" width="550" height="350" rx="8" fill="%23ffffff" stroke="%2394a3b8" stroke-width="1.5"/><text x="50" y="60" fill="%230f172a" font-size="14" font-family="sans-serif" font-weight="bold">Kasun Perera (2027-STU-001) - A/L Physics Assignment</text><text x="50" y="80" fill="%2364748b" font-size="11" font-family="sans-serif">Handwritten Answer Sheet - 30 MCQs Deep Drawing</text><line x1="45" y1="95" x2="555" y2="95" stroke="%23cbd5e1" stroke-width="1"/><g fill="%231e293b" font-size="12" font-family="monospace" font-weight="bold"><text x="60" y="130">1. [A]   6. [B]  11. [C]  16. [A]  21. [D]  26. [A]</text><text x="60" y="160">2. [C]   7. [D]  12. [A]  17. [C]  22. [B]  27. [C]</text><text x="60" y="190">3. [B]   8. [A]  13. [D]  18. [B]  23. [A]  28. [B]</text><text x="60" y="220">4. [A]   9. [C]  14. [B]  19. [D]  24. [C]  29. [D]</text><text x="60" y="250">5. [D]  10. [B]  15. [A]  20. [B]  25. [C]  30. [A]</text></g><rect x="50" y="280" width="500" height="70" rx="6" fill="%23f1f5f9" stroke="%23cbd5e1"/><text x="70" y="305" fill="%23047857" font-size="12" font-family="sans-serif" font-weight="bold">Verified Optical Scan:</text><text x="70" y="325" fill="%23334155" font-size="11" font-family="sans-serif">All 30 questions legibly marked with dark ink. High recognition confidence.</text><text x="70" y="340" fill="%23334155" font-size="11" font-family="sans-serif">Score: 28 / 30 marks awarded.</text></svg>`;
+
+export const INITIAL_ASSIGNMENTS: Assignment[] = [
+  {
+    id: "assign-physics-30mcq-01",
+    title: "A/L Mechanics, Dynamics & Thermal Physics Master Assignment",
+    subject: "Physics",
+    topic: "Mechanics, Fields & Thermal Laws",
+    batch: "All",
+    description: "Complete all 30 challenging MCQs on your answer sheet. Clearly write questions 1-30 and darkly shade or draw your chosen answers (A, B, C, D). Submit a clear, well-lit photo of your handwritten sheet for automated marking scheme evaluation.",
+    totalQuestions: 30,
+    durationHours: 24,
+    durationDays: 1,
+    deadline: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString(), // 22 hours left in 1-day period
+    visibleUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Visible in portal for 1 month
+    mcqQuestions: [
+      {
+        id: "amcq-seed-1",
+        questionNumber: 1,
+        question: "A uniform cylindrical rod of length L and cross-sectional area A floats vertically in water with 2/3 of its length submerged. When pushed down slightly and released, it performs simple harmonic motion. If the density of water is ρ and acceleration due to gravity is g, what is the period of oscillation T?",
+        options: ["T = 2π√(2L / 3g)", "T = 2π√(L / 3g)", "T = 2π√(3L / 2g)", "T = 2π√(L / g)"]
+      },
+      {
+        id: "amcq-seed-2",
+        questionNumber: 2,
+        question: "A block of mass m is placed on a rough horizontal surface with coefficient of static friction μ. A force F is applied at an angle θ above the horizontal. What is the minimum magnitude of force F required to just move the block along the horizontal surface?",
+        options: ["F = μmg / (cos θ - μ sin θ)", "F = μmg / (sin θ + μ cos θ)", "F = μmg / (cos θ + μ sin θ)", "F = mg / (cos θ + μ sin θ)"]
+      },
+      {
+        id: "amcq-seed-3",
+        questionNumber: 3,
+        question: "A particle is projected from the base of an inclined plane of inclination 30° with a speed u at an angle of 60° to the horizontal. What is the range of the particle along the inclined plane?",
+        options: ["u² / (3g)", "2u² / (3g)", "4u² / (3g)", "u² / (√3 g)"]
+      },
+      {
+        id: "amcq-seed-4",
+        questionNumber: 4,
+        question: "A solid sphere and a hollow cylinder of equal mass M and radius R roll without slipping down an inclined plane of angle θ from rest. What is the ratio of their translational accelerations (a_sphere / a_cylinder)?",
+        options: ["10 / 7", "7 / 5", "5 / 7", "14 / 15"]
+      },
+      {
+        id: "amcq-seed-5",
+        questionNumber: 5,
+        question: "A non-viscous, incompressible fluid flows steadily through a horizontal pipe whose diameter narrows from D to D/2. If the speed of the fluid at the wider section is v, what is the pressure difference (P1 - P2) between the two sections (density = ρ)?",
+        options: ["(7 / 2) ρv²", "8 ρv²", "(3 / 2) ρv²", "(15 / 2) ρv²"]
+      },
+      {
+        id: "amcq-seed-6",
+        questionNumber: 6,
+        question: "A sound source moves toward a stationary observer with speed v_s = 0.2 v (where v is the speed of sound in air). Simultaneously, the observer moves away from the source at 0.1 v. If the emitted frequency is f₀, what is the apparent frequency heard by the observer?",
+        options: ["1.250 f₀", "1.125 f₀", "0.900 f₀", "1.050 f₀"]
+      },
+      {
+        id: "amcq-seed-7",
+        questionNumber: 7,
+        question: "Two coherent monochromatic sound sources S1 and S2 emit in phase at wavelength λ. An observer moves along a perpendicular line from S1 to S2. What condition specifies the first position of destructive interference?",
+        options: ["Path difference = λ", "Phase difference = 2π", "Path difference = 3λ / 4", "Path difference = λ / 2"]
+      },
+      {
+        id: "amcq-seed-8",
+        questionNumber: 8,
+        question: "An ideal gas undergoes a cycle consisting of an isobaric expansion at pressure P₀ from V₀ to 2V₀, an isochoric cooling to pressure P₀/2, and an adiabatic return to the initial state. What is the net work done during the isobaric step?",
+        options: ["P₀V₀", "2P₀V₀", "P₀V₀ / 2", "3P₀V₀ / 2"]
+      },
+      {
+        id: "amcq-seed-9",
+        questionNumber: 9,
+        question: "A heat engine works between an absolute temperature reservoir of T_H = 600 K and a cold sink T_C = 300 K. If it absorbs 1200 J from the hot source and produces 400 J of work, what is the ratio of its actual efficiency to the maximum theoretical Carnot efficiency?",
+        options: ["1 / 2", "3 / 4", "2 / 3", "5 / 6"]
+      },
+      {
+        id: "amcq-seed-10",
+        questionNumber: 10,
+        question: "Two point charges +4q and -q are fixed at a distance d apart. At what point on the line passing through both charges is the net electric field intensity zero?",
+        options: ["At distance d/2 between the two charges", "At distance d from -q on the side opposite to +4q", "At distance 2d from +4q between the charges", "At distance 2d from -q between the charges"]
+      },
+      {
+        id: "amcq-seed-11",
+        questionNumber: 11,
+        question: "A parallel plate capacitor with plate area A and separation d is filled with two dielectric slabs of thickness d/2 with dielectric constants k1 and k2 in series. What is the equivalent capacitance?",
+        options: ["ε₀A(k1 + k2) / (2d)", "ε₀A(k1·k2) / [2d(k1 + k2)]", "2ε₀A(k1·k2) / [d(k1 + k2)]", "4ε₀Ak1k2 / [d(k1 + k2)]"]
+      },
+      {
+        id: "amcq-seed-12",
+        questionNumber: 12,
+        question: "Twelve identical resistors, each of resistance R, are connected along the edges of a cube. What is the equivalent resistance between two diagonally opposite corners of the cube?",
+        options: ["5R / 6", "3R / 4", "7R / 12", "R"]
+      },
+      {
+        id: "amcq-seed-13",
+        questionNumber: 13,
+        question: "In a potentiometer circuit, a wire of length 100 cm has a resistance of 10 Ω. It is connected in series with a 40 Ω resistor and an accumulator of EMF 2.0 V (zero internal resistance). What is the potential gradient along the potentiometer wire?",
+        options: ["0.020 V/cm", "0.010 V/cm", "0.002 V/cm", "0.004 V/cm"]
+      },
+      {
+        id: "amcq-seed-14",
+        questionNumber: 14,
+        question: "A circular coil of radius r with N turns carries a current I. At what axial distance x from the center of the coil is the magnetic flux density equal to 1/8 of that at the center?",
+        options: ["x = 2r", "x = √3 r", "x = √7 r", "x = r / 2"]
+      },
+      {
+        id: "amcq-seed-15",
+        questionNumber: 15,
+        question: "A conducting circular loop of radius R and electrical resistance r is placed perpendicular to a uniform magnetic field B = B₀ cos(ωt). What is the peak thermal power dissipated in the loop?",
+        options: ["(π² R⁴ B₀² ω²) / (2r)", "(π² R⁴ B₀² ω²) / r", "(π R² B₀ ω)² / (4r)", "(2π² R⁴ B₀² ω²) / r"]
+      },
+      {
+        id: "amcq-seed-16",
+        questionNumber: 16,
+        question: "An alternating voltage V = 200√2 sin(100πt) V is applied across an inductor of inductance L = 0.5/π H. What is the root-mean-square current through the inductor?",
+        options: ["4.0 A", "2.83 A", "5.65 A", "2.0 A"]
+      },
+      {
+        id: "amcq-seed-17",
+        questionNumber: 17,
+        question: "A beam of light traveling in a medium with refractive index n1 strikes an interface with a medium of refractive index n2 at Brewster's angle θ_B. If n1 = √3 and n2 = 1, what is the angle of refraction?",
+        options: ["30°", "45°", "60°", "90°"]
+      },
+      {
+        id: "amcq-seed-18",
+        questionNumber: 18,
+        question: "In Young's double slit experiment, if the entire apparatus is immersed in water of refractive index 4/3 without altering slit separation or screen distance, what happens to the fringe width β?",
+        options: ["Increases to (4/3) of its original value", "Decreases to (3/4) of its original value", "Remains unchanged", "Decreases to (9/16) of its original value"]
+      },
+      {
+        id: "amcq-seed-19",
+        questionNumber: 19,
+        question: "A convex lens of focal length 20 cm in air is made of glass (n = 1.5). When immersed in a liquid of refractive index 1.25, what will be its new focal length?",
+        options: ["40 cm", "25 cm", "100 cm", "50 cm"]
+      },
+      {
+        id: "amcq-seed-20",
+        questionNumber: 20,
+        question: "A metal surface is irradiated with light of frequency ν, and the stopping potential is V₁. When irradiated with light of frequency 2ν, the stopping potential becomes V₂. If e is the elementary charge, what is Planck's constant h?",
+        options: ["e(V₂ - V₁) / ν", "e(V₂ + V₁) / ν", "2e(V₂ - V₁) / ν", "e(V₂ - 2V₁) / ν"]
+      },
+      {
+        id: "amcq-seed-21",
+        questionNumber: 21,
+        question: "According to the Bohr model of the hydrogen atom, what is the ratio of the radius of the third orbit (n = 3) to that of the ground state (n = 1)?",
+        options: ["3 : 1", "27 : 1", "1 : 9", "9 : 1"]
+      },
+      {
+        id: "amcq-seed-22",
+        questionNumber: 22,
+        question: "A radioactive isotope has a half-life of 20 days. Starting with an initial activity of 800 Bq, what will be its activity after 60 days?",
+        options: ["200 Bq", "100 Bq", "50 Bq", "267 Bq"]
+      },
+      {
+        id: "amcq-seed-23",
+        questionNumber: 23,
+        question: "In an n-p-n bipolar junction transistor connected in common-emitter configuration, the base current is 25 μA and the collector current is 2.475 mA. What is the common-emitter current gain β?",
+        options: ["99", "100", "0.99", "50"]
+      },
+      {
+        id: "amcq-seed-24",
+        questionNumber: 24,
+        question: "An operational amplifier (op-amp) configured as an inverting amplifier has input resistance R_in = 10 kΩ and feedback resistance R_f = 220 kΩ. If an input voltage of -0.05 V is applied, what is the output voltage (assuming supply voltage ±15 V)?",
+        options: ["-1.1 V", "+2.2 V", "+1.1 V", "-0.5 V"]
+      },
+      {
+        id: "amcq-seed-25",
+        questionNumber: 25,
+        question: "Which combination of logic gates can implement a standard two-input exclusive-OR (XOR) function using the minimum number of 2-input NAND gates?",
+        options: ["3 NAND gates", "5 NAND gates", "2 NAND gates", "4 NAND gates"]
+      },
+      {
+        id: "amcq-seed-26",
+        questionNumber: 26,
+        question: "A steel wire of length 2.0 m and cross-sectional area 1.0 mm² is stretched by a force of 200 N. If Young's modulus for steel is 2.0 × 10¹¹ N/m², what is the elastic energy stored in the wire?",
+        options: ["0.20 J", "0.40 J", "0.10 J", "0.05 J"]
+      },
+      {
+        id: "amcq-seed-27",
+        questionNumber: 27,
+        question: "A uniform meter rule of mass 100 g is balanced horizontally on a knife-edge placed at the 40 cm mark when a mass m is suspended from the 10 cm mark. What is the value of mass m?",
+        options: ["25.0 g", "50.0 g", "33.3 g", "66.7 g"]
+      },
+      {
+        id: "amcq-seed-28",
+        questionNumber: 28,
+        question: "A satellite of mass m orbits the Earth at a circular radius r with orbital speed v. What is the total mechanical energy of the satellite?",
+        options: ["+ (1/2) m v²", "- (1/2) m v²", "- m v²", "- 2 m v²"]
+      },
+      {
+        id: "amcq-seed-29",
+        questionNumber: 29,
+        question: "A capillary tube of radius r is dipped vertically into water of surface tension T and contact angle zero. If the atmospheric pressure is P₀, what is the pressure inside the water just below the curved meniscus?",
+        options: ["P₀ + (2T / r)", "P₀ - (T / r)", "P₀", "P₀ - (2T / r)"]
+      },
+      {
+        id: "amcq-seed-30",
+        questionNumber: 30,
+        question: "In a thermo-electric couple, the cold junction is maintained at 0 °C and the neutral temperature is 280 °C. What is the temperature of inversion for this thermocouple?",
+        options: ["560 °C", "140 °C", "420 °C", "350 °C"]
+      }
+    ],
+    markingScheme: {
+      1: 0, 2: 2, 3: 1, 4: 0, 5: 3, 6: 1, 7: 3, 8: 0, 9: 2, 10: 1,
+      11: 2, 12: 0, 13: 3, 14: 1, 15: 0, 16: 0, 17: 2, 18: 1, 19: 3, 20: 0,
+      21: 3, 22: 1, 23: 0, 24: 2, 25: 3, 26: 0, 27: 2, 28: 1, 29: 3, 30: 0
+    },
+    markingSchemeImageUrl: sampleMarkingSchemeSvg,
+    markingSchemeNotes: "Official Department Marking Scheme for 30 Advanced Physics MCQs. 1 mark per correct question.",
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    createdBy: "admin-1",
+    isPublished: true,
+    provider: "Standard Syllabus"
+  }
+];
+
+const optionLetters = ["A", "B", "C", "D"];
+const officialSeedMarkingScheme: Record<number, number> = {
+  1: 0, 2: 2, 3: 1, 4: 0, 5: 3, 6: 1, 7: 3, 8: 0, 9: 2, 10: 1,
+  11: 2, 12: 0, 13: 3, 14: 1, 15: 0, 16: 0, 17: 2, 18: 1, 19: 3, 20: 0,
+  21: 3, 22: 1, 23: 0, 24: 2, 25: 3, 26: 0, 27: 2, 28: 1, 29: 3, 30: 0
+};
+
+export const INITIAL_ASSIGNMENT_SUBMISSIONS: AssignmentSubmission[] = [
+  {
+    id: "asub-seed-01",
+    assignmentId: "assign-physics-30mcq-01",
+    studentId: "student-1",
+    studentName: "Kasun Perera",
+    studentIndexNo: "2027-STU-001",
+    batch: "2027",
+    answerSheetImageUrl: sampleStudentSheetSvg,
+    submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    evaluatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    score: 26,
+    totalMarks: 30,
+    percentage: 86.7,
+    calculation: {
+      totalQuestions: 30,
+      correctAnswers: 26,
+      wrongAnswers: 2,
+      unansweredQuestions: 1,
+      unclearQuestions: 1,
+      totalMarksObtained: 26,
+      maximumPossibleMarks: 30,
+      percentage: 86.7
+    },
+    questionResults: Array.from({ length: 30 }, (_, i) => {
+      const qNum = i + 1;
+      const correctIdx = officialSeedMarkingScheme[qNum] ?? 0;
+      const correctLabel = optionLetters[correctIdx] || "A";
+
+      // Q10: wrong
+      if (qNum === 10) {
+        return {
+          questionNumber: qNum,
+          detectedAnswer: (correctIdx + 1) % 4,
+          detectedAnswerLabel: optionLetters[(correctIdx + 1) % 4],
+          correctAnswer: correctIdx,
+          correctAnswerLabel: correctLabel,
+          status: 'wrong' as const,
+          isCorrect: false,
+          confidence: 'high' as const
+        };
+      }
+      // Q15: unclear
+      if (qNum === 15) {
+        return {
+          questionNumber: qNum,
+          detectedAnswer: null,
+          detectedAnswerLabel: "Unclear (Multiple marks detected)",
+          correctAnswer: correctIdx,
+          correctAnswerLabel: correctLabel,
+          status: 'unclear' as const,
+          isCorrect: false,
+          confidence: 'low' as const
+        };
+      }
+      // Q20: wrong
+      if (qNum === 20) {
+        return {
+          questionNumber: qNum,
+          detectedAnswer: (correctIdx + 2) % 4,
+          detectedAnswerLabel: optionLetters[(correctIdx + 2) % 4],
+          correctAnswer: correctIdx,
+          correctAnswerLabel: correctLabel,
+          status: 'wrong' as const,
+          isCorrect: false,
+          confidence: 'medium' as const
+        };
+      }
+      // Q25: unanswered
+      if (qNum === 25) {
+        return {
+          questionNumber: qNum,
+          detectedAnswer: null,
+          detectedAnswerLabel: "Unanswered (Blank bubble)",
+          correctAnswer: correctIdx,
+          correctAnswerLabel: correctLabel,
+          status: 'unanswered' as const,
+          isCorrect: false,
+          confidence: 'high' as const
+        };
+      }
+
+      // All others: correct
+      return {
+        questionNumber: qNum,
+        detectedAnswer: correctIdx,
+        detectedAnswerLabel: correctLabel,
+        correctAnswer: correctIdx,
+        correctAnswerLabel: correctLabel,
+        status: 'correct' as const,
+        isCorrect: true,
+        confidence: 'high' as const
+      };
+    }),
+    aiFeedback: "Comprehensive Result: 26 Correct, 2 Wrong, 1 Unanswered, 1 Unclear. 26/30 Marks (86.7%). Handwritten bubble answer sheet scanned with high fidelity. Ensure all chosen bubbles are darkly filled without smudges.",
+    status: "graded"
+  }
+];
+
+
 // LocalStorage Synchronization Manager
 export function getLMSData() {
   if (typeof window === 'undefined') {
@@ -810,6 +1130,8 @@ export function getLMSData() {
       exams: INITIAL_EXAMS,
       examPapers: [],
       paperSubmissions: [],
+      assignments: INITIAL_ASSIGNMENTS,
+      assignmentSubmissions: INITIAL_ASSIGNMENT_SUBMISSIONS,
       forums: INITIAL_FORUMS,
       slips: INITIAL_SLIPS,
       announcements: INITIAL_ANNOUNCEMENTS,
@@ -843,6 +1165,8 @@ export function getLMSData() {
     exams: getOrInit('ap_exams', INITIAL_EXAMS),
     examPapers: getOrInit('ap_exam_papers', []),
     paperSubmissions: getOrInit('ap_paper_submissions', []),
+    assignments: getOrInit('ap_assignments', INITIAL_ASSIGNMENTS),
+    assignmentSubmissions: getOrInit('ap_assignment_submissions', INITIAL_ASSIGNMENT_SUBMISSIONS),
     forums: getOrInit('ap_forums', INITIAL_FORUMS),
     slips: getOrInit('ap_slips', INITIAL_SLIPS),
     announcements: getOrInit('ap_announcements', INITIAL_ANNOUNCEMENTS),
