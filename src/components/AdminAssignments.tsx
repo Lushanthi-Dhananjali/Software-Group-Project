@@ -48,9 +48,11 @@ export default function AdminAssignments({
   onUpdateSubmission
 }: AdminAssignmentsProps) {
   const isSinhala = lang === 'si';
-  const canCreate = currentUser.role === 'admin'; // Only admin can create assignments
+  const isAdmin = currentUser.role === 'admin';
+  const canCreate = isAdmin; // Only admin can create assignments
+  const canEditMarkingScheme = isAdmin; // Only admin can edit or customize marking scheme (Super Admin restricted)
   const isSuperAdmin = currentUser.role === 'super-admin';
-  const canDeleteAssignment = currentUser.role === 'admin' || currentUser.role === 'super-admin'; // Admin or Super Admin can delete assignments
+  const canDeleteAssignment = isAdmin; // Only admin can delete assignments (Super Admin restricted)
 
   const [activeTab, setActiveTab] = useState<'create' | 'list' | 'submissions'>(canCreate ? 'create' : 'list');
 
@@ -67,7 +69,6 @@ export default function AdminAssignments({
 
   // Draft Assignment State
   const [draft, setDraft] = useState<Assignment | null>(null);
-  const [markingImagePreview, setMarkingImagePreview] = useState<string>('');
 
   // Modals
   const [viewQuestionsAssignment, setViewQuestionsAssignment] = useState<Assignment | null>(null);
@@ -151,7 +152,6 @@ export default function AdminAssignments({
 
       setSuccessMsg(`Successfully generated & published "${publishedAssignment.title}" (${publishedAssignment.totalQuestions} MCQs)! Submission deadline: 1 Day (24 Hours) • Visible for 1 Month.`);
       setDraft(null);
-      setMarkingImagePreview('');
       setActiveTab('list');
     } catch (err: any) {
       setErrorMsg(err.message || 'Generation failed. Please try again.');
@@ -160,26 +160,7 @@ export default function AdminAssignments({
     }
   };
 
-
-
-  // 2. Marking Scheme Image File Upload
-  const handleMarkingImageUpload = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setErrorMsg('Please upload a valid image file (PNG, JPG, or WEBP).');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
-      const base64Url = uploadEvent.target?.result as string;
-      setMarkingImagePreview(base64Url);
-      if (draft) {
-        setDraft({ ...draft, markingSchemeImageUrl: base64Url });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // 3. Update Individual Marking Scheme Question
+  // 2. Update Individual Marking Scheme Question (Official Answer Key Matrix)
   const handleUpdateMarkingAnswer = (qNumber: number, optionIndex: number) => {
     if (!draft) return;
     setDraft({
@@ -191,7 +172,7 @@ export default function AdminAssignments({
     });
   };
 
-  // 4. Publish Assignment
+  // 3. Publish Assignment
   const handlePublish = async () => {
     if (!draft) return;
     setIsPublishing(true);
@@ -200,15 +181,14 @@ export default function AdminAssignments({
     try {
       const assignmentToSave: Assignment = {
         ...draft,
-        markingSchemeImageUrl: markingImagePreview || draft.markingSchemeImageUrl || '',
+        markingSchemeImageUrl: '',
         createdBy: currentUser.id,
         isPublished: true
       };
 
       await onSaveAssignment(assignmentToSave);
-      setSuccessMsg('Assignment with 30 MCQs & Marking Scheme published successfully!');
+      setSuccessMsg(`Assignment "${draft.title}" with Official Answer Key published successfully!`);
       setDraft(null);
-      setMarkingImagePreview('');
       setActiveTab('list');
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to publish assignment.');
@@ -305,7 +285,7 @@ export default function AdminAssignments({
           <div>
             <span className="font-bold text-blue-300 uppercase">Super Admin Inspection & Moderation Clearance</span>
             <p className="mt-0.5 text-slate-300">
-              Only Admin staff can author new assignments. Both Admin and Super Admin have full access to inspect assignments, review optical mark evaluations, and manage assignment lifecycle.
+              Only Admin staff can author assignments, edit/customize marking schemes, or delete assignments. Super Admin has access to inspect assignments, review the official answer key, and view student marks & sheets.
             </p>
           </div>
         </div>
@@ -535,78 +515,6 @@ export default function AdminAssignments({
               </div>
             </div>
 
-              {/* SECTION: ADMIN MARKING SCHEME IMAGE UPLOADER */}
-              <div className="p-5 bg-slate-950 rounded-xl border border-slate-850 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-amber-400" />
-                    <h4 className="font-bold text-xs uppercase tracking-wider text-white">
-                      Admin Marking Scheme Image Upload
-                    </h4>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    Upload official handwritten / printed marking key sheet
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                  <div>
-                    <label className="border-2 border-dashed border-slate-800 hover:border-amber-500/50 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors bg-slate-900/50">
-                      <Upload className="h-6 w-6 text-slate-400" />
-                      <span className="text-xs font-bold text-slate-300">
-                        {markingImagePreview ? 'Change Marking Scheme Image' : 'Upload Marking Scheme Image'}
-                      </span>
-                      <span className="text-[10px] text-slate-500">PNG, JPG, or WEBP (Clear snapshot)</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleMarkingImageUpload(file);
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                  {markingImagePreview ? (
-                    <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 group">
-                      <img
-                        src={markingImagePreview}
-                        alt="Marking Scheme"
-                        className="w-full h-36 object-contain p-2"
-                      />
-                      <div className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setZoomImageModalUrl(markingImagePreview)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Eye className="h-3.5 w-3.5" /> Full View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMarkingImagePreview('');
-                            if (draft) setDraft({ ...draft, markingSchemeImageUrl: '' });
-                          }}
-                          className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" /> Remove
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-36 rounded-xl border border-slate-850 bg-slate-900/30 flex flex-col items-center justify-center text-slate-500 text-xs p-4 text-center">
-                      <ImageIcon className="h-6 w-6 mb-1 opacity-40" />
-                      <span>No marking scheme image uploaded yet.</span>
-                      <span className="text-[10px] text-slate-600 mt-0.5">
-                        (Optional: You can provide the image for optical cross-referencing and verification.)
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* SECTION: MARKING SCHEME ANSWER KEY GRID */}
               <div className="space-y-3">
@@ -802,15 +710,15 @@ export default function AdminAssignments({
                           onClick={() => setViewMarkingSchemeAssignment(assignment)}
                           className="py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                          <ImageIcon className="h-3.5 w-3.5" /> Scheme & Key
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Answer Key
                         </button>
                       </div>
 
-                      {canCreate && (
+                      {canEditMarkingScheme && (
                         <button
+                          type="button"
                           onClick={() => {
                             setDraft(assignment);
-                            setMarkingImagePreview(assignment.markingSchemeImageUrl || '');
                             setActiveTab('create');
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
@@ -1067,10 +975,10 @@ export default function AdminAssignments({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl animate-fade-in">
             <div className="p-5 border-b border-slate-800 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-mono text-amber-400 uppercase font-bold">
-                  Official Marking Scheme & Answer Key
+                <span className="text-[10px] font-mono text-amber-400 uppercase font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Official Answer Key & Marking Scheme
                 </span>
-                <h3 className="font-display font-bold text-white text-lg">
+                <h3 className="font-display font-bold text-white text-lg mt-0.5">
                   {viewMarkingSchemeAssignment.title}
                 </h3>
               </div>
@@ -1083,34 +991,6 @@ export default function AdminAssignments({
             </div>
 
             <div className="p-5 overflow-y-auto space-y-6 text-xs">
-              {/* Marking Scheme Image */}
-              <div className="space-y-2">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-white flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-amber-400" />
-                  Admin Marking Scheme Image
-                </h4>
-                {viewMarkingSchemeAssignment.markingSchemeImageUrl ? (
-                  <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-2 text-center group">
-                    <img
-                      src={viewMarkingSchemeAssignment.markingSchemeImageUrl}
-                      alt="Official Scheme"
-                      className="max-h-72 w-full object-contain rounded-lg mx-auto"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setZoomImageModalUrl(viewMarkingSchemeAssignment.markingSchemeImageUrl!)}
-                      className="mt-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Eye className="h-3.5 w-3.5" /> Click to Zoom High-Res
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-6 rounded-xl border border-slate-850 bg-slate-950 text-center text-slate-500">
-                    No physical marking scheme image was uploaded for this assignment. Key is configured below.
-                  </div>
-                )}
-              </div>
-
               {/* 20 or 30-Question Grid */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

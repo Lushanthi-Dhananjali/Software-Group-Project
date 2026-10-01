@@ -1072,8 +1072,8 @@ export default function App() {
   };
 
   const handleDeleteAssignment = async (assignmentId: string) => {
-    if (loggedInUser?.role !== 'admin' && loggedInUser?.role !== 'super-admin') {
-      throw new Error('Only administrators can delete assignments.');
+    if (loggedInUser?.role !== 'admin') {
+      throw new Error('Only admins can delete assignments.');
     }
     const relatedSubmissions = (db.assignmentSubmissions || []).filter(
       s => s.assignmentId === assignmentId || (s as any).assignment_id === assignmentId
