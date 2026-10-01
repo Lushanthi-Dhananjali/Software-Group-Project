@@ -255,13 +255,35 @@ export async function deleteExamPaperWithSubmissions(paperId: string) {
 }
 
 export async function deleteAssignmentWithSubmissions(assignmentId: string) {
-  const connectedDatabase = getDatabase();
-  const assignmentResult = await connectedDatabase.collection<any>('assignments').deleteOne({ _id: assignmentId });
-  if (assignmentResult.deletedCount === 0) {
-    return { deletedAssignment: false, deletedSubmissions: 0 };
+  if (isMongoConnected && database) {
+    try {
+      const assignmentResult = await database.collection<any>('assignments').deleteOne({ _id: assignmentId });
+      if (assignmentResult.deletedCount === 0) {
+        return { deletedAssignment: false, deletedSubmissions: 0 };
+      }
+      const submissionsResult = await database.collection<any>('assignmentSubmissions').deleteMany({ assignmentId });
+      return { deletedAssignment: true, deletedSubmissions: submissionsResult.deletedCount };
+    } catch (err) {
+      console.error('Failed to delete assignment from MongoDB:', err);
+    }
   }
-  const submissionsResult = await connectedDatabase.collection<any>('assignmentSubmissions').deleteMany({ assignmentId });
-  return { deletedAssignment: true, deletedSubmissions: submissionsResult.deletedCount };
+
+  const dbData = readLocalDb();
+  const initialAssignments = dbData.assignments || [];
+  const filteredAssignments = initialAssignments.filter((a: any) => a.id !== assignmentId && a._id !== assignmentId);
+  const deletedAssignment = filteredAssignments.length < initialAssignments.length;
+
+  const initialSubmissions = dbData.assignmentSubmissions || [];
+  const filteredSubmissions = initialSubmissions.filter((s: any) => s.assignmentId !== assignmentId);
+  const deletedSubmissions = initialSubmissions.length - filteredSubmissions.length;
+
+  if (deletedAssignment) {
+    dbData.assignments = filteredAssignments;
+    dbData.assignmentSubmissions = filteredSubmissions;
+    writeLocalDb(dbData);
+  }
+
+  return { deletedAssignment, deletedSubmissions };
 }
 
 export async function getExamAttempts(studentId: string) {

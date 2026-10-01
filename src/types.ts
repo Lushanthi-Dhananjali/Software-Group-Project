@@ -325,6 +325,8 @@ export interface AssignmentSubmission {
   questionResults: AssignmentQuestionResult[];
   aiFeedback?: string;
   status: 'submitted' | 'graded';
+}
+
 export type SummarizerMode = 'key_points' | 'formula_sheet' | 'executive_summary' | 'qa_quiz' | 'mindmap_outline';
 export type SummarizerLevel = 'standard' | 'advanced' | 'simplified';
 

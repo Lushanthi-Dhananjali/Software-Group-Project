@@ -282,8 +282,7 @@ export default function App() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Active Tab Routers
-  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice' | 'papers' | 'assignments'>(() => {
-  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice' | 'papers' | 'summarizer'>(() => {
+  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice' | 'papers' | 'assignments' | 'summarizer'>(() => {
     try {
       const savedTab = localStorage.getItem('ap_student_tab');
       if (savedTab) return savedTab as any;
