@@ -84,11 +84,13 @@ import AdminExamPapers from './components/AdminExamPapers';
 import StudentExamPapers from './components/StudentExamPapers';
 import AdminAssignments from './components/AdminAssignments';
 import StudentAssignments from './components/StudentAssignments';
+import AINotesSummarizer from './components/AINotesSummarizer';
 
 // Icons
 import {
   GraduationCap,
   BrainCircuit,
+  Sparkles,
   Globe,
   LogIn,
   LogOut,
@@ -281,6 +283,7 @@ export default function App() {
 
   // Active Tab Routers
   const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice' | 'papers' | 'assignments'>(() => {
+  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice' | 'papers' | 'summarizer'>(() => {
     try {
       const savedTab = localStorage.getItem('ap_student_tab');
       if (savedTab) return savedTab as any;
@@ -1629,6 +1632,17 @@ export default function App() {
                           <button
                             onClick={() => {
                               setCurrentScreen('student');
+                              setStudentTab('summarizer');
+                              setProfileDropdownOpen(false);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-2.5 text-amber-300"
+                          >
+                            <div className="h-2 w-2 rounded-full bg-amber-400" />
+                            AI NOTES SUMMARIZER
+                          </button>
+                          <button
+                            onClick={() => {
+                              setCurrentScreen('student');
                               setStudentTab('messages');
                               setProfileDropdownOpen(false);
                             }}
@@ -2494,6 +2508,7 @@ export default function App() {
                 {[
                   { id: 'profile', label: 'Student Profile & Center', icon: UserIcon },
                   { id: 'classes', label: t.activeLiveStream, icon: Video },
+                  { id: 'summarizer', label: lang === 'en' ? 'AI Notes Summarizer' : 'AI සටහන් සාරාංශය', icon: Sparkles },
                   { id: 'practice', label: lang === 'en' ? 'Practice MCQ' : 'MCQ පුහුණුව', icon: BrainCircuit },
                   { id: 'papers', label: lang === 'en' ? 'Exam Papers' : 'විභාග ප්‍රශ්න පත්‍ර', icon: ClipboardList },
                   { id: 'assignments', label: lang === 'en' ? 'Assignments' : 'පැවරුම් (Assignments)', icon: FileText },
@@ -3005,28 +3020,41 @@ export default function App() {
                               </h4>
                             </div>
 
-                            <div className="pt-4 border-t border-slate-850 mt-4 flex justify-between items-center text-xs font-sans">
+                            <div className="pt-4 border-t border-slate-850 mt-4 flex justify-between items-center text-xs font-sans gap-2 flex-wrap">
                               <span className="text-[10px] text-slate-500 font-mono">Published: {pdf.uploadedAt}</span>
-                              {unlocked ? (
-                                <a
-                                  href={pdf.pdfUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-[11px] transition-colors"
-                                >
-                                  Download PDF
-                                </a>
-                              ) : (
+                              <div className="flex items-center gap-1.5">
                                 <button
+                                  type="button"
                                   onClick={() => {
-                                    setStudentTab('profile');
-                                    setProfileSubTab('payment');
+                                    setStudentTab('summarizer');
                                   }}
-                                  className="px-3.5 py-1.5 bg-slate-900 text-slate-500 border border-slate-800 font-semibold rounded-lg text-[10px] uppercase flex items-center gap-1 cursor-pointer"
+                                  className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-850 text-amber-400 hover:text-amber-300 border border-amber-500/30 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                                  title="Summarize with AI"
                                 >
-                                  🔒 Locked
+                                  <Sparkles className="h-3 w-3" />
+                                  <span>AI Summary</span>
                                 </button>
-                              )}
+                                {unlocked ? (
+                                  <a
+                                    href={pdf.pdfUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-[11px] transition-colors"
+                                  >
+                                    Download PDF
+                                  </a>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setStudentTab('profile');
+                                      setProfileSubTab('payment');
+                                    }}
+                                    className="px-3.5 py-1.5 bg-slate-900 text-slate-500 border border-slate-800 font-semibold rounded-lg text-[10px] uppercase flex items-center gap-1 cursor-pointer"
+                                  >
+                                    🔒 Locked
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -3162,6 +3190,13 @@ export default function App() {
           </div>
         </div>
       )}
+
+              {studentTab === 'summarizer' && (
+                <AINotesSummarizer
+                  lang={lang}
+                  studyMaterials={db.materials || []}
+                />
+              )}
 
               {studentTab === 'practice' && (
                 <PracticeMCQ

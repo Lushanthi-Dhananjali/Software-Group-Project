@@ -325,5 +325,35 @@ export interface AssignmentSubmission {
   questionResults: AssignmentQuestionResult[];
   aiFeedback?: string;
   status: 'submitted' | 'graded';
+export type SummarizerMode = 'key_points' | 'formula_sheet' | 'executive_summary' | 'qa_quiz' | 'mindmap_outline';
+export type SummarizerLevel = 'standard' | 'advanced' | 'simplified';
+
+export interface FormulaOrDefinition {
+  termOrLaw: string;
+  formulaOrDefinition: string;
+  siUnitsOrNotes: string;
+}
+
+export interface SummaryQuizItem {
+  question: string;
+  answer: string;
+}
+
+export interface NotesSummaryResult {
+  id: string;
+  title: string;
+  topic?: string;
+  overview: string;
+  keyPoints: string[];
+  formulasAndDefinitions: FormulaOrDefinition[];
+  examTips: string[];
+  quickQuiz: SummaryQuizItem[];
+  rawMarkdown: string;
+  provider: string;
+  model: string;
+  language: Language;
+  mode: SummarizerMode;
+  createdAt: string;
+  wordCount: number;
 }
 
