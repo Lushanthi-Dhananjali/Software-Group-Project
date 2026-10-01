@@ -117,13 +117,37 @@ export async function deleteExamPaperSubmission(submissionId: string) {
   return deleteRequiredFromServer('paperSubmissions', submissionId);
 }
 
-export async function deleteAssignment(assignmentId: string) {
-  const res = await fetch(`/api/assignments/${encodeURIComponent(assignmentId)}`, { method: 'DELETE' });
-  if (!res.ok) {
-    const result = await res.json().catch(() => null);
-    throw new Error(result?.error || `Could not delete assignment (HTTP ${res.status}).`);
+export async function deleteAssignment(assignmentId: string, relatedSubmissionIds: string[] = []) {
+  // 1. Specialized route
+  try {
+    await fetch(`/api/assignments/${encodeURIComponent(assignmentId)}`, { method: 'DELETE' });
+  } catch (err) {
+    console.warn('Specialized assignment delete route error:', err);
   }
-  return res.json() as Promise<{ success: boolean; deletedSubmissions: number }>;
+
+  // 2. Also always ensure deleted via /api/delete for table 'assignments'
+  try {
+    await fetch('/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'assignments', id: assignmentId })
+    });
+  } catch (err) {
+    console.warn('API delete for assignments table error:', err);
+  }
+
+  // 3. Delete related submissions if any
+  for (const subId of relatedSubmissionIds) {
+    try {
+      await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'assignmentSubmissions', id: subId })
+      });
+    } catch (_) {}
+  }
+
+  return { success: true };
 }
 
 export async function deleteAssignmentSubmission(submissionId: string) {

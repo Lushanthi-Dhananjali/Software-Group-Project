@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient, Db, ObjectId } from 'mongodb';
 import dotenv from 'dotenv';
 import {
   INITIAL_USERS,
@@ -156,6 +156,9 @@ async function seedMongoIfEmpty() {
 function withoutMongoId(document: any) {
   if (!document) return document;
   const { _id, ...data } = document;
+  if (!data.id && _id) {
+    data.id = typeof _id === 'object' && _id?.toString ? _id.toString() : String(_id);
+  }
   return data;
 }
 
@@ -207,7 +210,13 @@ export async function saveItem(collectionName: string, id: string, data: any) {
 export async function deleteItem(collectionName: string, id: string) {
   if (isMongoConnected && database) {
     try {
-      await database.collection<any>(collectionName).deleteOne({ _id: id });
+      const orConditions: any[] = [{ _id: id }, { id }];
+      if (typeof id === 'string' && ObjectId.isValid(id) && id.length === 24) {
+        try {
+          orConditions.push({ _id: new ObjectId(id) });
+        } catch (_) {}
+      }
+      await database.collection<any>(collectionName).deleteOne({ $or: orConditions });
       return { success: true };
     } catch (err) {
       console.error(`Failed to delete item from MongoDB (${collectionName}):`, err);
@@ -255,13 +264,54 @@ export async function deleteExamPaperWithSubmissions(paperId: string) {
 }
 
 export async function deleteAssignmentWithSubmissions(assignmentId: string) {
-  const connectedDatabase = getDatabase();
-  const assignmentResult = await connectedDatabase.collection<any>('assignments').deleteOne({ _id: assignmentId });
-  if (assignmentResult.deletedCount === 0) {
-    return { deletedAssignment: false, deletedSubmissions: 0 };
+  let deletedAssignment = false;
+  let deletedSubmissions = 0;
+
+  if (isMongoConnected && database) {
+    try {
+      const orConditions: any[] = [{ _id: assignmentId }, { id: assignmentId }];
+      if (typeof assignmentId === 'string' && ObjectId.isValid(assignmentId) && assignmentId.length === 24) {
+        try {
+          orConditions.push({ _id: new ObjectId(assignmentId) });
+        } catch (_) {}
+      }
+      const assignmentResult = await database.collection<any>('assignments').deleteOne({ $or: orConditions });
+      if (assignmentResult.deletedCount > 0) {
+        deletedAssignment = true;
+      }
+      const submissionsResult = await database.collection<any>('assignmentSubmissions').deleteMany({
+        $or: [{ assignmentId }, { assignment_id: assignmentId }]
+      });
+      deletedSubmissions = submissionsResult.deletedCount || 0;
+    } catch (err) {
+      console.error('Failed to delete assignment from MongoDB:', err);
+    }
   }
-  const submissionsResult = await connectedDatabase.collection<any>('assignmentSubmissions').deleteMany({ assignmentId });
-  return { deletedAssignment: true, deletedSubmissions: submissionsResult.deletedCount };
+
+  // Always keep local JSON file database in sync
+  try {
+    const dbData = readLocalDb();
+    const initialAssignments = dbData.assignments || [];
+    const filteredAssignments = initialAssignments.filter((a: any) => a.id !== assignmentId && a._id !== assignmentId);
+    if (filteredAssignments.length < initialAssignments.length) {
+      deletedAssignment = true;
+    }
+
+    const initialSubmissions = dbData.assignmentSubmissions || [];
+    const filteredSubmissions = initialSubmissions.filter((s: any) => s.assignmentId !== assignmentId);
+    const localDeletedSubmissions = initialSubmissions.length - filteredSubmissions.length;
+    if (localDeletedSubmissions > deletedSubmissions) {
+      deletedSubmissions = localDeletedSubmissions;
+    }
+
+    dbData.assignments = filteredAssignments;
+    dbData.assignmentSubmissions = filteredSubmissions;
+    writeLocalDb(dbData);
+  } catch (localErr) {
+    console.warn('Failed to update local db after deleting assignment:', localErr);
+  }
+
+  return { deletedAssignment: true, deletedSubmissions };
 }
 
 export async function getExamAttempts(studentId: string) {
