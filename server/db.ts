@@ -26,6 +26,47 @@ const FILE_DB_PATH = path.resolve(process.cwd(), 'lms_database.json');
 let client: MongoClient | null = null;
 let database: Db | null = null;
 let isMongoConnected = false;
+let reconnectTimer: NodeJS.Timeout | null = null;
+let isReconnecting = false;
+
+function markMongoDisconnected(reason?: any) {
+  if (isMongoConnected) {
+    isMongoConnected = false;
+    const msg = reason instanceof Error ? reason.message : String(reason || 'Network timeout');
+    console.warn(`⚠️ MongoDB connection lost: ${msg}. Seamlessly switched to local storage (lms_database.json).`);
+  }
+  scheduleMongoReconnect();
+}
+
+function scheduleMongoReconnect() {
+  if (reconnectTimer || isReconnecting || !mongoUri) return;
+  reconnectTimer = setTimeout(async () => {
+    reconnectTimer = null;
+    if (isMongoConnected) return;
+    isReconnecting = true;
+    try {
+      if (!client || !database) {
+        client = new MongoClient(mongoUri, {
+          maxPoolSize: 10,
+          minPoolSize: 0,
+          connectTimeoutMS: 5000,
+          serverSelectionTimeoutMS: 4000,
+          socketTimeoutMS: 15000
+        });
+        await client.connect();
+        database = client.db(mongoDatabaseName);
+      }
+      await database.command({ ping: 1 });
+      isMongoConnected = true;
+      console.log(`✅ MongoDB connection restored: ${mongoDatabaseName}`);
+    } catch (_) {
+      // Still unreachable (e.g. temporary DNS or internet drop), try again in 20s
+      scheduleMongoReconnect();
+    } finally {
+      isReconnecting = false;
+    }
+  }, 20000);
+}
 
 const initialSettings = [
   { id: 'home_sections', hero: true, classes: true, timeline: true, announcements: true, contact: true },
@@ -111,14 +152,16 @@ function writeLocalDb(data: Record<string, any[]>) {
 }
 
 export async function initDatabase() {
+  initLocalFileDb();
+
   if (mongoUri) {
     try {
       client = new MongoClient(mongoUri, {
         maxPoolSize: 10,
         minPoolSize: 0,
-        connectTimeoutMS: 8000,
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 30000
+        connectTimeoutMS: 6000,
+        serverSelectionTimeoutMS: 4000,
+        socketTimeoutMS: 15000
       });
       await client.connect();
       database = client.db(mongoDatabaseName);
@@ -132,24 +175,26 @@ export async function initDatabase() {
       client = null;
       database = null;
       isMongoConnected = false;
-      console.warn(`MongoDB connection failed: ${error instanceof Error ? error.message : String(error)}. Falling back to local file database.`);
+      console.warn(`MongoDB initial connection notice: ${error instanceof Error ? error.message : String(error)}. Using local database cache (lms_database.json).`);
+      scheduleMongoReconnect();
     }
   } else {
     console.log('MONGODB_URI not provided. Using local JSON database (lms_database.json).');
   }
-
-  // Fallback to local file database
-  initLocalFileDb();
 }
 
 async function seedMongoIfEmpty() {
   if (!database) return;
 
-  for (const [collectionName, items] of Object.entries(seedData)) {
-    const collection = database.collection(collectionName);
-    if (await collection.countDocuments() === 0 && items.length > 0) {
-      await collection.insertMany(items.map((item) => ({ ...item, _id: item.id })));
+  try {
+    for (const [collectionName, items] of Object.entries(seedData)) {
+      const collection = database.collection(collectionName);
+      if (await collection.countDocuments() === 0 && items.length > 0) {
+        await collection.insertMany(items.map((item) => ({ ...item, _id: item.id })));
+      }
     }
+  } catch (err) {
+    console.warn('MongoDB seed notice:', err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -171,8 +216,8 @@ export async function getLMSData() {
         result[collectionName] = documents.map(withoutMongoId);
       }
       return result;
-    } catch (err) {
-      console.error('Failed to get LMS data from MongoDB, falling back to local file:', err);
+    } catch (err: any) {
+      markMongoDisconnected(err);
     }
   }
 
@@ -187,12 +232,12 @@ export async function saveItem(collectionName: string, id: string, data: any) {
         { ...data, _id: id },
         { upsert: true }
       );
-      return { success: true };
-    } catch (err) {
-      console.error(`Failed to save item to MongoDB (${collectionName}):`, err);
+    } catch (err: any) {
+      markMongoDisconnected(err);
     }
   }
 
+  // Always keep local storage updated so fallback is always fresh
   const dbData = readLocalDb();
   if (!dbData[collectionName]) {
     dbData[collectionName] = [];
@@ -217,12 +262,12 @@ export async function deleteItem(collectionName: string, id: string) {
         } catch (_) {}
       }
       await database.collection<any>(collectionName).deleteOne({ $or: orConditions });
-      return { success: true };
-    } catch (err) {
-      console.error(`Failed to delete item from MongoDB (${collectionName}):`, err);
+    } catch (err: any) {
+      markMongoDisconnected(err);
     }
   }
 
+  // Always keep local storage updated
   const dbData = readLocalDb();
   if (dbData[collectionName]) {
     dbData[collectionName] = dbData[collectionName].filter((item: any) => item.id !== id && item._id !== id);
@@ -232,27 +277,35 @@ export async function deleteItem(collectionName: string, id: string) {
 }
 
 export async function deleteExamPaperWithSubmissions(paperId: string) {
+  let deletedPaper = false;
+  let deletedSubmissions = 0;
+
   if (isMongoConnected && database) {
     try {
       const paperResult = await database.collection<any>('examPapers').deleteOne({ _id: paperId });
-      if (paperResult.deletedCount === 0) {
-        return { deletedPaper: false, deletedSubmissions: 0 };
+      if (paperResult.deletedCount > 0) {
+        deletedPaper = true;
       }
       const submissionsResult = await database.collection<any>('paperSubmissions').deleteMany({ paperId });
-      return { deletedPaper: true, deletedSubmissions: submissionsResult.deletedCount };
-    } catch (err) {
-      console.error('Failed to delete exam paper from MongoDB:', err);
+      deletedSubmissions = submissionsResult.deletedCount;
+    } catch (err: any) {
+      markMongoDisconnected(err);
     }
   }
 
   const dbData = readLocalDb();
   const initialPapers = dbData.examPapers || [];
   const filteredPapers = initialPapers.filter((p: any) => p.id !== paperId && p._id !== paperId);
-  const deletedPaper = filteredPapers.length < initialPapers.length;
+  if (filteredPapers.length < initialPapers.length) {
+    deletedPaper = true;
+  }
 
   const initialSubmissions = dbData.paperSubmissions || [];
   const filteredSubmissions = initialSubmissions.filter((s: any) => s.paperId !== paperId);
-  const deletedSubmissions = initialSubmissions.length - filteredSubmissions.length;
+  const localDeletedSubmissions = initialSubmissions.length - filteredSubmissions.length;
+  if (localDeletedSubmissions > deletedSubmissions) {
+    deletedSubmissions = localDeletedSubmissions;
+  }
 
   if (deletedPaper) {
     dbData.examPapers = filteredPapers;
@@ -283,8 +336,8 @@ export async function deleteAssignmentWithSubmissions(assignmentId: string) {
         $or: [{ assignmentId }, { assignment_id: assignmentId }]
       });
       deletedSubmissions = submissionsResult.deletedCount || 0;
-    } catch (err) {
-      console.error('Failed to delete assignment from MongoDB:', err);
+    } catch (err: any) {
+      markMongoDisconnected(err);
     }
   }
 
@@ -319,8 +372,8 @@ export async function getExamAttempts(studentId: string) {
     try {
       const attempts = await database.collection('attempts').find({ studentId }).toArray();
       return attempts.map(withoutMongoId);
-    } catch (err) {
-      console.error('Failed to get attempts from MongoDB:', err);
+    } catch (err: any) {
+      markMongoDisconnected(err);
     }
   }
 
@@ -330,10 +383,18 @@ export async function getExamAttempts(studentId: string) {
 }
 
 export function getDatabaseStatus() {
+  let hostname = 'localhost';
+  try {
+    if (mongoUri) {
+      const parsed = new URL(mongoUri);
+      hostname = parsed.hostname;
+    }
+  } catch (_) {}
+
   return {
     connected: true,
     provider: isMongoConnected ? 'MongoDB Atlas' : 'Local File JSON Fallback (lms_database.json)',
     databaseName: isMongoConnected ? mongoDatabaseName : 'lms_database.json',
-    host: isMongoConnected && mongoUri ? new URL(mongoUri).hostname : 'localhost'
+    host: isMongoConnected ? hostname : 'localhost'
   };
 }
