@@ -1075,10 +1075,24 @@ export default function App() {
     if (loggedInUser?.role !== 'admin' && loggedInUser?.role !== 'super-admin') {
       throw new Error('Only administrators can delete assignments.');
     }
-    await deleteAssignment(assignmentId);
+    const relatedSubmissions = (db.assignmentSubmissions || []).filter(
+      s => s.assignmentId === assignmentId || (s as any).assignment_id === assignmentId
+    );
+    const relatedSubmissionIds = relatedSubmissions.map(s => s.id);
+
+    try {
+      await deleteAssignment(assignmentId, relatedSubmissionIds);
+    } catch (backendErr: any) {
+      console.warn('Backend delete assignment warning:', backendErr);
+    }
+
     setDb(prev => {
-      const remainingAssignments = (prev.assignments || []).filter(a => a.id !== assignmentId);
-      const remainingSubmissions = (prev.assignmentSubmissions || []).filter(s => s.assignmentId !== assignmentId);
+      const remainingAssignments = (prev.assignments || []).filter(
+        a => a.id !== assignmentId && (a as any)._id !== assignmentId
+      );
+      const remainingSubmissions = (prev.assignmentSubmissions || []).filter(
+        s => s.assignmentId !== assignmentId && (s as any).assignment_id !== assignmentId
+      );
       saveLMSData('ap_assignments', remainingAssignments);
       saveLMSData('ap_assignment_submissions', remainingSubmissions);
       return {
@@ -1104,26 +1118,6 @@ export default function App() {
       return {
         ...prev,
         assignmentSubmissions: updatedList
-      };
-    });
-  };
-
-  const handleDeleteAssignmentSubmission = async (submissionId: string) => {
-    const isAdministrator = loggedInUser?.role === 'admin' || loggedInUser?.role === 'super-admin';
-    if (!isAdministrator) {
-      throw new Error('Only Admin or Super Admin can delete student mark sheets.');
-    }
-    try {
-      await deleteAssignmentSubmission(submissionId);
-    } catch (err: any) {
-      console.warn('Backend delete error for assignment submission:', err);
-    }
-    setDb(prev => {
-      const remainingSubmissions = (prev.assignmentSubmissions || []).filter(s => s.id !== submissionId);
-      saveLMSData('ap_assignment_submissions', remainingSubmissions);
-      return {
-        ...prev,
-        assignmentSubmissions: remainingSubmissions
       };
     });
   };
@@ -4491,7 +4485,6 @@ export default function App() {
                 users={db.users}
                 onSaveAssignment={handleSaveAssignment}
                 onDeleteAssignment={handleDeleteAssignment}
-                onDeleteSubmission={handleDeleteAssignmentSubmission}
                 onUpdateSubmission={handleSubmitAssignmentSubmission}
               />
             )}

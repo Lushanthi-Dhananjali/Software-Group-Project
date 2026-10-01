@@ -87,8 +87,7 @@ async function startServer() {
   app.delete("/api/assignments/:assignmentId", async (req, res) => {
     try {
       const result = await deleteAssignmentWithSubmissions(req.params.assignmentId);
-      if (!result.deletedAssignment) return res.status(404).json({ error: "Assignment not found." });
-      res.json({ success: true, deletedSubmissions: result.deletedSubmissions });
+      res.json({ success: true, deletedSubmissions: result.deletedSubmissions ?? 0 });
     } catch (error: any) {
       console.error("API error deleting assignment:", error);
       res.status(500).json({ error: "Failed to delete assignment: " + error.message });
@@ -1253,9 +1252,21 @@ Return only valid JSON matching the schema.`;
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use by another process. Please terminate the process using port ${PORT}.`);
+    } else {
+      console.error("Server error:", err);
+    }
+    process.exit(1);
   });
 }
 
-startServer();
+startServer().catch(err => {
+  console.error("FATAL ERROR IN startServer:", err);
+  process.exit(1);
+});

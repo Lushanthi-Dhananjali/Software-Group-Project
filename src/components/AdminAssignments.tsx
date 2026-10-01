@@ -34,7 +34,6 @@ interface AdminAssignmentsProps {
   users: User[];
   onSaveAssignment: (assignment: Assignment) => Promise<void>;
   onDeleteAssignment: (assignmentId: string) => Promise<void>;
-  onDeleteSubmission?: (submissionId: string) => Promise<void> | void;
   onUpdateSubmission?: (submission: AssignmentSubmission) => Promise<void> | void;
 }
 
@@ -46,13 +45,12 @@ export default function AdminAssignments({
   users,
   onSaveAssignment,
   onDeleteAssignment,
-  onDeleteSubmission,
   onUpdateSubmission
 }: AdminAssignmentsProps) {
   const isSinhala = lang === 'si';
   const canCreate = currentUser.role === 'admin'; // Only admin can create assignments
   const isSuperAdmin = currentUser.role === 'super-admin';
-  const canDeleteMarkSheet = currentUser.role === 'admin' || currentUser.role === 'super-admin'; // Admin or Super Admin can delete student mark sheets
+  const canDeleteAssignment = currentUser.role === 'admin' || currentUser.role === 'super-admin'; // Admin or Super Admin can delete assignments
 
   const [activeTab, setActiveTab] = useState<'create' | 'list' | 'submissions'>(canCreate ? 'create' : 'list');
 
@@ -65,6 +63,7 @@ export default function AdminAssignments({
   const [isPublishing, setIsPublishing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Draft Assignment State
   const [draft, setDraft] = useState<Assignment | null>(null);
@@ -161,30 +160,7 @@ export default function AdminAssignments({
     }
   };
 
-  // Delete student mark sheet (submission) handler: Admin or Super Admin can delete
-  const handleDeleteSubmission = async (submission: AssignmentSubmission) => {
-    if (!canDeleteMarkSheet) {
-      setErrorMsg('Permission denied: Only Admin and Super Admin can delete student mark sheets.');
-      return;
-    }
 
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete the mark sheet for "${submission.studentName}" (${submission.studentIndexNo})?\n\nScore: ${submission.score}/${submission.totalMarks || 30} (${submission.percentage}%)\n\nThis will permanently delete this student's submission. This action cannot be undone.`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      if (onDeleteSubmission) {
-        await onDeleteSubmission(submission.id);
-      }
-      if (viewSubmissionDetail && viewSubmissionDetail.id === submission.id) {
-        setViewSubmissionDetail(null);
-      }
-      setSuccessMsg(`Mark sheet deleted successfully for ${submission.studentName}.`);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to delete mark sheet.');
-    }
-  };
 
   // 2. Marking Scheme Image File Upload
   const handleMarkingImageUpload = (file: File) => {
@@ -329,7 +305,7 @@ export default function AdminAssignments({
           <div>
             <span className="font-bold text-blue-300 uppercase">Super Admin Inspection & Moderation Clearance</span>
             <p className="mt-0.5 text-slate-300">
-              Only Admin staff can author new assignments. Both Admin and Super Admin have full access to inspect assignments, review optical mark evaluations, and delete student mark sheets when necessary.
+              Only Admin staff can author new assignments. Both Admin and Super Admin have full access to inspect assignments, review optical mark evaluations, and manage assignment lifecycle.
             </p>
           </div>
         </div>
@@ -851,16 +827,45 @@ export default function AdminAssignments({
                         <FileText className="h-3.5 w-3.5 text-amber-400" /> View Answer Sheet Template
                       </button>
 
-                      {canCreate && (
+                      {canDeleteAssignment && (
                         <button
+                          type="button"
+                          disabled={deletingId === (assignment.id || (assignment as any)._id)}
                           onClick={async () => {
-                            if (window.confirm(`Are you sure you want to delete assignment "${assignment.title}" and its ${subCount} submissions?`)) {
-                              await onDeleteAssignment(assignment.id);
+                            const targetId = assignment.id || (assignment as any)._id;
+                            if (!targetId) return;
+                            const confirmed = window.confirm(
+                              `Are you sure you want to delete assignment "${assignment.title}"?\n\nThis will permanently delete this assignment and all ${subCount} student submissions associated with it.\n\nThis action cannot be undone.`
+                            );
+                            if (!confirmed) return;
+                            try {
+                              setDeletingId(targetId);
+                              setErrorMsg('');
+                              await onDeleteAssignment(targetId);
+                              setSuccessMsg(`Assignment "${assignment.title}" and all related submissions were deleted successfully.`);
+                            } catch (err: any) {
+                              setErrorMsg(err.message || 'Failed to delete assignment.');
+                            } finally {
+                              setDeletingId(null);
                             }
                           }}
-                          className="w-full py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          className={`w-full py-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            deletingId === (assignment.id || (assignment as any)._id)
+                              ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
+                              : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20'
+                          }`}
                         >
-                          <Trash2 className="h-3.5 w-3.5" /> Delete Assignment
+                          {deletingId === (assignment.id || (assignment as any)._id) ? (
+                            <>
+                              <LoaderCircle className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-3.5 w-3.5" />
+                              <span>Delete Assignment</span>
+                            </>
+                          )}
                         </button>
                       )}
                     </div>
@@ -983,17 +988,6 @@ export default function AdminAssignments({
                             >
                               <Eye className="h-3.5 w-3.5" /> Inspect
                             </button>
-
-                            {canDeleteMarkSheet && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteSubmission(sub)}
-                                className="px-2.5 py-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 rounded-lg font-bold text-[11px] uppercase tracking-wider transition-all inline-flex items-center gap-1 cursor-pointer"
-                                title="Delete Student Mark Sheet"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" /> Delete
-                              </button>
-                            )}
                           </td>
                         </tr>
                       );
@@ -1206,30 +1200,16 @@ export default function AdminAssignments({
             </div>
 
             <div className="p-5 overflow-y-auto space-y-6 text-xs">
-              {/* Submission Status & Action Control Panel */}
+              {/* Submission Status & Info Panel */}
               <div className="p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs bg-slate-950 border-slate-800">
                 <div>
                   <span className="font-bold text-white block">
                     Submission Status: <span className="text-emerald-400 font-bold uppercase tracking-wider">Submitted & Evaluated</span>
                   </span>
                   <p className="text-slate-400 text-[11px] mt-0.5">
-                    Submitted on {formatDate(viewSubmissionDetail.submittedAt)} • Single Attempt
+                    Submitted on {formatDate(viewSubmissionDetail.submittedAt)} • Permanent Record
                   </p>
                 </div>
-
-                {canDeleteMarkSheet && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSubmission(viewSubmissionDetail)}
-                      className="px-3.5 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
-                      title="Delete Student Mark Sheet"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Delete Mark Sheet</span>
-                    </button>
-                  </div>
-                )}
               </div>
               {/* Official Result Calculation Metrics: Max Marks, Total Marks, Percentage */}
               <div className="space-y-2">
