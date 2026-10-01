@@ -17,6 +17,8 @@ import {
   ExamAttempt,
   ExamPaper,
   ExamPaperSubmission,
+  Assignment,
+  AssignmentSubmission,
   HomeSectionsVisibility,
   HomeContentSettings,
   ChatMessage,
@@ -115,6 +117,19 @@ export async function deleteExamPaperSubmission(submissionId: string) {
   return deleteRequiredFromServer('paperSubmissions', submissionId);
 }
 
+export async function deleteAssignment(assignmentId: string) {
+  const res = await fetch(`/api/assignments/${encodeURIComponent(assignmentId)}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const result = await res.json().catch(() => null);
+    throw new Error(result?.error || `Could not delete assignment (HTTP ${res.status}).`);
+  }
+  return res.json() as Promise<{ success: boolean; deletedSubmissions: number }>;
+}
+
+export async function deleteAssignmentSubmission(submissionId: string) {
+  return deleteRequiredFromServer('assignmentSubmissions', submissionId);
+}
+
 export async function saveRequiredUser(user: User) {
   return saveRequiredToServer('users', user.id, user);
 }
@@ -154,6 +169,8 @@ export async function fetchLMSData() {
       exams: INITIAL_EXAMS,
       examPapers: [],
       paperSubmissions: [],
+      assignments: [],
+      assignmentSubmissions: [],
       forums: INITIAL_FORUMS,
       slips: INITIAL_SLIPS,
       announcements: INITIAL_ANNOUNCEMENTS,
@@ -239,6 +256,18 @@ export async function saveExamPaper(paper: ExamPaper) {
 
 export async function saveExamPaperSubmission(submission: ExamPaperSubmission) {
   await saveRequiredToServer('paperSubmissions', submission.id, submission);
+}
+
+// -------------------------------------------------------------
+// ASSIGNMENT MUTATIONS
+// -------------------------------------------------------------
+
+export async function saveAssignment(assignment: Assignment) {
+  await saveRequiredToServer('assignments', assignment.id, assignment);
+}
+
+export async function saveAssignmentSubmission(submission: AssignmentSubmission) {
+  await saveRequiredToServer('assignmentSubmissions', submission.id, submission);
 }
 
 // -------------------------------------------------------------

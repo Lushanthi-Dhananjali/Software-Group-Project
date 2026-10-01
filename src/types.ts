@@ -255,6 +255,76 @@ export interface StudentFeedback {
   createdAt: string;
 }
 
+export interface AssignmentMCQ {
+  id: string;
+  questionNumber: number; // 1 to 20 or 30
+  question: string;
+  options: [string, string, string, string]; // Exactly 4 options: A, B, C, D
+}
+
+export interface Assignment {
+  id: string;
+  title: string;
+  subject: string;
+  topic: string;
+  batch: Batch;
+  description: string;
+  totalQuestions: number; // 20 or 30 MCQs
+  durationHours: number; // 24 hours (1 day submission deadline)
+  durationDays?: number; // 1 day submission duration
+  deadline: string; // ISO date string (submission deadline: within 1 day)
+  visibleUntil?: string; // ISO date string (visible for 1 month / 30 days)
+  mcqQuestions: AssignmentMCQ[];
+  markingScheme: Record<number, number>; // 1-indexed question number -> 0..3 option index (well distributed A, B, C, D)
+  markingSchemeImageUrl?: string; // Admin uploaded marking scheme image
+  markingSchemeNotes?: string;
+  createdAt: string;
+  createdBy: string;
+  isPublished: boolean;
+  provider?: 'Gemini' | 'Ollama' | 'Standard Syllabus';
+}
+
+export type QuestionEvaluationStatus = 'correct' | 'wrong' | 'unanswered' | 'unclear';
+
+export interface AssignmentQuestionResult {
+  questionNumber: number; // 1 to 20 or 30
+  detectedAnswer: number | null; // 0..3 index (0=A, 1=B, 2=C, 3=D) or null
+  detectedAnswerLabel: string; // "A", "B", "C", "D", "Unanswered", "Unclear"
+  correctAnswer: number; // 0..3 index
+  correctAnswerLabel: string; // "A", "B", "C", "D"
+  status: QuestionEvaluationStatus;
+  isCorrect: boolean;
+  confidence?: 'high' | 'medium' | 'low';
+}
+
+export interface AssignmentResultCalculation {
+  maximumPossibleMarks: number;
+  totalMarksObtained: number;
+  percentage: number;
+  totalQuestions?: number;
+  correctAnswers?: number;
+  wrongAnswers?: number;
+  unansweredQuestions?: number;
+  unclearQuestions?: number;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName: string;
+  studentIndexNo: string;
+  batch: Batch;
+  answerSheetImageUrl: string; // Completed physical answer sheet photo
+  submittedAt: string;
+  evaluatedAt: string;
+  score: number; // Total marks obtained
+  totalMarks: number; // Maximum possible marks (20 or 30)
+  percentage: number; // Percentage
+  calculation: AssignmentResultCalculation; // Complete 8-metric result calculation
+  questionResults: AssignmentQuestionResult[];
+  aiFeedback?: string;
+  status: 'submitted' | 'graded';
 export type SummarizerMode = 'key_points' | 'formula_sheet' | 'executive_summary' | 'qa_quiz' | 'mindmap_outline';
 export type SummarizerLevel = 'standard' | 'advanced' | 'simplified';
 

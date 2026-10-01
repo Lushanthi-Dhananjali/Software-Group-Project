@@ -25,6 +25,10 @@ import {
   saveExamPaperSubmission,
   deleteExamPaper,
   deleteExamPaperSubmission,
+  saveAssignment,
+  deleteAssignment,
+  saveAssignmentSubmission,
+  deleteAssignmentSubmission,
   saveRequiredUser,
   fetchExamAttempts,
   signInWithGooglePopup,
@@ -54,6 +58,8 @@ import {
   ExamAttempt,
   ExamPaper,
   ExamPaperSubmission,
+  Assignment,
+  AssignmentSubmission,
   HomeSectionsVisibility,
   HomeContentSettings,
   Milestone,
@@ -76,6 +82,8 @@ import AdminClassesStudents from './components/AdminClassesStudents';
 import PracticeMCQ from './components/PracticeMCQ';
 import AdminExamPapers from './components/AdminExamPapers';
 import StudentExamPapers from './components/StudentExamPapers';
+import AdminAssignments from './components/AdminAssignments';
+import StudentAssignments from './components/StudentAssignments';
 import AINotesSummarizer from './components/AINotesSummarizer';
 
 // Icons
@@ -274,6 +282,7 @@ export default function App() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Active Tab Routers
+  const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice' | 'papers' | 'assignments'>(() => {
   const [studentTab, setStudentTab] = useState<'profile' | 'dashboard' | 'classes' | 'lms' | 'exams' | 'forum' | 'payment' | 'messages' | 'practice' | 'papers' | 'summarizer'>(() => {
     try {
       const savedTab = localStorage.getItem('ap_student_tab');
@@ -288,7 +297,7 @@ export default function App() {
     } catch {}
     return 'dashboard';
   });
-  const [adminTab, setAdminTab] = useState<'dashboard' | 'slips' | 'users' | 'publisher' | 'papers' | 'settings' | 'homepage' | 'messages' | 'superadmin' | 'classes-students' | 'feedback_approval'>(() => {
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'slips' | 'users' | 'publisher' | 'papers' | 'assignments' | 'settings' | 'homepage' | 'messages' | 'superadmin' | 'classes-students' | 'feedback_approval'>(() => {
     try {
       const savedTab = localStorage.getItem('ap_admin_tab');
       if (savedTab) return savedTab as any;
@@ -1046,6 +1055,78 @@ export default function App() {
       users: updatedOwner ? prev.users.map(user => user.id === updatedOwner.id ? updatedOwner : user) : prev.users
     }));
     if (updatedOwner && loggedInUser?.id === updatedOwner.id) setLoggedInUser(updatedOwner);
+  };
+
+  const handleSaveAssignment = async (assignment: Assignment) => {
+    if (loggedInUser?.role !== 'admin') {
+      throw new Error('Only administrators can author and publish assignments.');
+    }
+    await saveAssignment(assignment);
+    setDb(prev => {
+      const updatedAssignments = [assignment, ...(prev.assignments || []).filter(a => a.id !== assignment.id)];
+      saveLMSData('ap_assignments', updatedAssignments);
+      return {
+        ...prev,
+        assignments: updatedAssignments
+      };
+    });
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (loggedInUser?.role !== 'admin' && loggedInUser?.role !== 'super-admin') {
+      throw new Error('Only administrators can delete assignments.');
+    }
+    await deleteAssignment(assignmentId);
+    setDb(prev => {
+      const remainingAssignments = (prev.assignments || []).filter(a => a.id !== assignmentId);
+      const remainingSubmissions = (prev.assignmentSubmissions || []).filter(s => s.assignmentId !== assignmentId);
+      saveLMSData('ap_assignments', remainingAssignments);
+      saveLMSData('ap_assignment_submissions', remainingSubmissions);
+      return {
+        ...prev,
+        assignments: remainingAssignments,
+        assignmentSubmissions: remainingSubmissions
+      };
+    });
+  };
+
+  const handleSubmitAssignmentSubmission = (submission: AssignmentSubmission) => {
+    saveAssignmentSubmission(submission).catch((err) => {
+      console.error('Failed to persist assignment submission:', err);
+    });
+    setDb(prev => {
+      const updatedList = [
+        submission,
+        ...(prev.assignmentSubmissions || []).filter(
+          s => s.id !== submission.id && !(s.assignmentId === submission.assignmentId && s.studentId === submission.studentId)
+        )
+      ];
+      saveLMSData('ap_assignment_submissions', updatedList);
+      return {
+        ...prev,
+        assignmentSubmissions: updatedList
+      };
+    });
+  };
+
+  const handleDeleteAssignmentSubmission = async (submissionId: string) => {
+    const isAdministrator = loggedInUser?.role === 'admin' || loggedInUser?.role === 'super-admin';
+    if (!isAdministrator) {
+      throw new Error('Only Admin or Super Admin can delete student mark sheets.');
+    }
+    try {
+      await deleteAssignmentSubmission(submissionId);
+    } catch (err: any) {
+      console.warn('Backend delete error for assignment submission:', err);
+    }
+    setDb(prev => {
+      const remainingSubmissions = (prev.assignmentSubmissions || []).filter(s => s.id !== submissionId);
+      saveLMSData('ap_assignment_submissions', remainingSubmissions);
+      return {
+        ...prev,
+        assignmentSubmissions: remainingSubmissions
+      };
+    });
   };
 
   const handleRepublishExamPaper = async (paperId: string, studentId: string) => {
@@ -2430,6 +2511,7 @@ export default function App() {
                   { id: 'summarizer', label: lang === 'en' ? 'AI Notes Summarizer' : 'AI සටහන් සාරාංශය', icon: Sparkles },
                   { id: 'practice', label: lang === 'en' ? 'Practice MCQ' : 'MCQ පුහුණුව', icon: BrainCircuit },
                   { id: 'papers', label: lang === 'en' ? 'Exam Papers' : 'විභාග ප්‍රශ්න පත්‍ර', icon: ClipboardList },
+                  { id: 'assignments', label: lang === 'en' ? 'Assignments' : 'පැවරුම් (Assignments)', icon: FileText },
                   { id: 'messages', label: lang === 'en' ? 'Live Support Chat' : 'සජීවී ගුරු සහය', icon: MessageSquare }
                 ].map((item) => {
                   const Icon = item.icon;
@@ -3134,6 +3216,16 @@ export default function App() {
                   submissions={(db.paperSubmissions || []).filter(submission => submission.studentId === loggedInUser.id)}
                   onSubmitPaper={handleSubmitExamPaper}
                   onDeleteSubmission={handleDeleteExamPaperSubmission}
+                />
+              )}
+
+              {studentTab === 'assignments' && (
+                <StudentAssignments
+                  lang={lang}
+                  currentUser={loggedInUser}
+                  assignments={db.assignments || []}
+                  submissions={(db.assignmentSubmissions || []).filter(sub => sub.studentId === loggedInUser.id)}
+                  onSubmitSubmission={handleSubmitAssignmentSubmission}
                 />
               )}
 
@@ -4214,6 +4306,7 @@ export default function App() {
                       { id: 'users', label: 'Student Directory' },
                       { id: 'publisher', label: 'Publish Content' },
                       { id: 'papers', label: 'Exam Papers' },
+                      { id: 'assignments', label: 'Assignments' },
                       { id: 'settings', label: 'Notice & Helplines' },
                       { id: 'homepage', label: 'Edit Homepage' },
                       { id: 'messages', label: 'Support Chat' },
@@ -4227,6 +4320,7 @@ export default function App() {
                       { id: 'users', label: 'Student Directory' },
                       { id: 'publisher', label: 'Publish Content' },
                       { id: 'papers', label: 'Exam Papers' },
+                      { id: 'assignments', label: 'Assignments' },
                       { id: 'settings', label: 'Notice & Helplines' },
                       { id: 'homepage', label: 'Edit Homepage' },
                       { id: 'messages', label: 'Support Chat' },
@@ -4386,6 +4480,20 @@ export default function App() {
                 onDeletePaper={handleDeleteExamPaper}
                 onDeleteSubmission={handleDeleteExamPaperSubmission}
                 onRepublishPaper={handleRepublishExamPaper}
+              />
+            )}
+
+            {(loggedInUser.role === 'admin' || loggedInUser.role === 'super-admin') && adminTab === 'assignments' && (
+              <AdminAssignments
+                lang={lang}
+                currentUser={loggedInUser}
+                assignments={db.assignments || []}
+                submissions={db.assignmentSubmissions || []}
+                users={db.users}
+                onSaveAssignment={handleSaveAssignment}
+                onDeleteAssignment={handleDeleteAssignment}
+                onDeleteSubmission={handleDeleteAssignmentSubmission}
+                onUpdateSubmission={handleSubmitAssignmentSubmission}
               />
             )}
 
