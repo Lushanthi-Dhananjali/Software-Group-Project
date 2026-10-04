@@ -576,6 +576,15 @@
       "comment": "The LMS portal is extremely helpful. I love how instantly our deposit slips are verified and we get immediate access to live streams and study materials. Sandun Sir explains complex concepts beautifully.",
       "status": "approved",
       "createdAt": "2026-06-26T12:00:00Z"
+    },
+    {
+      "id": "feedback-1791111083008",
+      "studentId": "student-1",
+      "studentName": "Kasun Perera",
+      "batch": "2027",
+      "comment": "this class is most powerful",
+      "status": "pending",
+      "createdAt": "2026-10-04T10:51:23.008Z"
     }
   ],
   "attempts": [],
