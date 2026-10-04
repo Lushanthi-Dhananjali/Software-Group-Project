@@ -2499,7 +2499,7 @@ export default function App() {
               {/* Portal Menu navigation panel */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 shadow-xl space-y-1">
                 {[
-                  { id: 'profile', label: 'Student Profile & Center', icon: UserIcon },
+                  { id: 'profile', label: 'Student Profile', icon: UserIcon },
                   { id: 'classes', label: t.activeLiveStream, icon: Video },
                   { id: 'summarizer', label: lang === 'en' ? 'AI Notes Summarizer' : 'AI සටහන් සාරාංශය', icon: Sparkles },
                   { id: 'practice', label: lang === 'en' ? 'Practice MCQ' : 'MCQ පුහුණුව', icon: BrainCircuit },
