@@ -2552,7 +2552,7 @@ export default function App() {
                       { id: 'lms', label: 'STUDY MATERIAL FOLDERS', icon: BookOpen },
                       { id: 'payment', label: 'TUITION PAYMENT SLIP', icon: CreditCard },
                       { id: 'profile_info', label: 'MY PROFILE DATA', icon: UserIcon },
-                      { id: 'feedback', label: t.publishMyFeedback, icon: MessageSquare }
+                      { id: 'feedback', label: 'FEEDBACK', icon: MessageSquare }
                     ].map((tabInfo) => {
                       const Icon = tabInfo.icon;
                       const isSelected = profileSubTab === tabInfo.id;
@@ -3076,7 +3076,7 @@ export default function App() {
                 <div>
                   <h3 className="font-display font-extrabold text-white text-lg tracking-tight flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-amber-400" />
-                    {t.publishMyFeedback}
+                    FEEDBACK
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
                     Share your learning experience and feedback directly with Dr. Aritha Perera and have it published on our main homepage.
