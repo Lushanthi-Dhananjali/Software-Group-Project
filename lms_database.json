@@ -60,6 +60,28 @@
       "status": "rejected",
       "rejectionReason": "Uploaded receipt copy was blurred. Please upload a clear photo of the deposit slip.",
       "createdAt": "2026-06-12T14:20:00Z"
+    },
+    {
+      "id": "user-1790229414376",
+      "name": "Lushanthi Dhananjali",
+      "email": "lush@gmail.com",
+      "mobile": "0789767192",
+      "whatsapp": "0767612789",
+      "school": "Govt.Science College",
+      "gender": "Female",
+      "district": "Matale",
+      "address": "No 62 ,Vihara road ,Matale",
+      "batch": "2027",
+      "role": "student",
+      "indexNo": "AP-2027-1007",
+      "barcode": "202710073",
+      "status": "active",
+      "createdAt": "2026-09-24T05:56:54.376Z",
+      "password": "456123",
+      "hiddenExamPaperIds": [
+        "paper-1790671219629",
+        "paper-1790741078747"
+      ]
     }
   ],
   "classes": [
@@ -585,6 +607,15 @@
       "comment": "this class is most powerful",
       "status": "pending",
       "createdAt": "2026-10-04T10:51:23.008Z"
+    },
+    {
+      "id": "feedback-1791172437719",
+      "studentId": "student-1",
+      "studentName": "Kasun Perera",
+      "batch": "2027",
+      "comment": "these classes are more supportive",
+      "status": "pending",
+      "createdAt": "2026-10-05T03:53:57.719Z"
     }
   ],
   "attempts": [],
@@ -971,6 +1002,551 @@
       "createdBy": "admin-1",
       "isPublished": true,
       "provider": "Standard Syllabus"
+    },
+    {
+      "id": "assign-1791112651937-b0a26d",
+      "title": "Physics: 20 Advanced Physics MCQs - Mechanics & Modern Physics",
+      "subject": "Physics",
+      "topic": "Mechanics & Modern Physics",
+      "batch": "All",
+      "description": "Complete all 20 challenging MCQs on the standardized answer sheet. Darkly fill your chosen bubbles (A, B, C, D). You must submit your handwritten answer sheet within 1 day (24 hours). This assignment and your completed results remain visible in the portal for 1 month (30 days).",
+      "totalQuestions": 20,
+      "durationHours": 24,
+      "durationDays": 1,
+      "deadline": "2026-10-05T11:15:29.127Z",
+      "visibleUntil": "2026-11-03T11:15:29.127Z",
+      "mcqQuestions": [
+        {
+          "id": "amcq-1791112651937-1",
+          "questionNumber": 1,
+          "question": "A uniform cylindrical rod of length L and cross-sectional area A floats vertically in water with 2/3 of its length submerged. When pushed down slightly and released, it performs simple harmonic motion. If the density of water is ρ and acceleration due to gravity is g, what is the period of oscillation T?",
+          "options": [
+            "T = 2π√(2L / 3g)",
+            "T = 2π√(L / 3g)",
+            "T = 2π√(3L / 2g)",
+            "T = 2π√(L / g)"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112651937-2",
+          "questionNumber": 2,
+          "question": "A block of mass m is placed on a rough horizontal surface with coefficient of static friction μ. A force F is applied at an angle θ above the horizontal. What is the minimum magnitude of force F required to just move the block along the horizontal surface?",
+          "options": [
+            "F = μmg / (cos θ - μ sin θ)",
+            "F = μmg / (sin θ + μ cos θ)",
+            "F = μmg / (cos θ + μ sin θ)",
+            "F = mg / (cos θ + μ sin θ)"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112651937-3",
+          "questionNumber": 3,
+          "question": "A particle is projected from the base of an inclined plane of inclination 30° with a speed u at an angle of 60° to the horizontal. What is the range of the particle along the inclined plane?",
+          "options": [
+            "u² / (3g)",
+            "2u² / (3g)",
+            "4u² / (3g)",
+            "u² / (√3 g)"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112651937-4",
+          "questionNumber": 4,
+          "question": "A solid sphere and a hollow cylinder of equal mass M and radius R roll without slipping down an inclined plane of angle θ from rest. What is the ratio of their translational accelerations (a_sphere / a_cylinder)?",
+          "options": [
+            "10 / 7",
+            "7 / 5",
+            "5 / 7",
+            "14 / 15"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112651937-5",
+          "questionNumber": 5,
+          "question": "A non-viscous, incompressible fluid flows steadily through a horizontal pipe whose diameter narrows from D to D/2. If the speed of the fluid at the wider section is v, what is the pressure difference (P1 - P2) between the two sections (density = ρ)?",
+          "options": [
+            "(7 / 2) ρv²",
+            "8 ρv²",
+            "(3 / 2) ρv²",
+            "(15 / 2) ρv²"
+          ],
+          "correctOptionIndex": 3
+        },
+        {
+          "id": "amcq-1791112651937-6",
+          "questionNumber": 6,
+          "question": "A sound source moves toward a stationary observer with speed v_s = 0.2 v (where v is the speed of sound in air). Simultaneously, the observer moves away from the source at 0.1 v. If the emitted frequency is f₀, what is the apparent frequency heard by the observer?",
+          "options": [
+            "1.250 f₀",
+            "1.125 f₀",
+            "0.900 f₀",
+            "1.050 f₀"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112651937-7",
+          "questionNumber": 7,
+          "question": "Two coherent monochromatic sound sources S1 and S2 emit in phase at wavelength λ. An observer moves along a perpendicular line from S1 to S2. What condition specifies the first position of destructive interference?",
+          "options": [
+            "Path difference = λ",
+            "Phase difference = 2π",
+            "Path difference = 3λ / 4",
+            "Path difference = λ / 2"
+          ],
+          "correctOptionIndex": 3
+        },
+        {
+          "id": "amcq-1791112651937-8",
+          "questionNumber": 8,
+          "question": "An ideal gas undergoes a cycle consisting of an isobaric expansion at pressure P₀ from V₀ to 2V₀, an isochoric cooling to pressure P₀/2, and an adiabatic return to the initial state. What is the net work done during the isobaric step?",
+          "options": [
+            "P₀V₀",
+            "2P₀V₀",
+            "P₀V₀ / 2",
+            "3P₀V₀ / 2"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112651937-9",
+          "questionNumber": 9,
+          "question": "A heat engine works between an absolute temperature reservoir of T_H = 600 K and a cold sink T_C = 300 K. If it absorbs 1200 J from the hot source and produces 400 J of work, what is the ratio of its actual efficiency to the maximum theoretical Carnot efficiency?",
+          "options": [
+            "1 / 2",
+            "3 / 4",
+            "2 / 3",
+            "5 / 6"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112651937-10",
+          "questionNumber": 10,
+          "question": "Two point charges +4q and -q are fixed at a distance d apart. At what point on the line passing through both charges is the net electric field intensity zero?",
+          "options": [
+            "At distance d/2 between the two charges",
+            "At distance d from -q on the side opposite to +4q",
+            "At distance 2d from +4q between the charges",
+            "At distance 2d from -q between the charges"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112651937-11",
+          "questionNumber": 11,
+          "question": "A parallel plate capacitor with plate area A and separation d is filled with two dielectric slabs of thickness d/2 with dielectric constants k1 and k2 in series. What is the equivalent capacitance?",
+          "options": [
+            "ε₀A(k1 + k2) / (2d)",
+            "ε₀A(k1·k2) / [2d(k1 + k2)]",
+            "2ε₀A(k1·k2) / [d(k1 + k2)]",
+            "4ε₀Ak1k2 / [d(k1 + k2)]"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112651937-12",
+          "questionNumber": 12,
+          "question": "Twelve identical resistors, each of resistance R, are connected along the edges of a cube. What is the equivalent resistance between two diagonally opposite corners of the cube?",
+          "options": [
+            "5R / 6",
+            "3R / 4",
+            "7R / 12",
+            "R"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112651937-13",
+          "questionNumber": 13,
+          "question": "In a potentiometer circuit, a wire of length 100 cm has a resistance of 10 Ω. It is connected in series with a 40 Ω resistor and an accumulator of EMF 2.0 V (zero internal resistance). What is the potential gradient along the potentiometer wire?",
+          "options": [
+            "0.020 V/cm",
+            "0.010 V/cm",
+            "0.002 V/cm",
+            "0.004 V/cm"
+          ],
+          "correctOptionIndex": 3
+        },
+        {
+          "id": "amcq-1791112651937-14",
+          "questionNumber": 14,
+          "question": "A circular coil of radius r with N turns carries a current I. At what axial distance x from the center of the coil is the magnetic flux density equal to 1/8 of that at the center?",
+          "options": [
+            "x = 2r",
+            "x = √3 r",
+            "x = √7 r",
+            "x = r / 2"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112651937-15",
+          "questionNumber": 15,
+          "question": "A conducting circular loop of radius R and electrical resistance r is placed perpendicular to a uniform magnetic field B = B₀ cos(ωt). What is the peak thermal power dissipated in the loop?",
+          "options": [
+            "(π² R⁴ B₀² ω²) / (2r)",
+            "(π² R⁴ B₀² ω²) / r",
+            "(π R² B₀ ω)² / (4r)",
+            "(2π² R⁴ B₀² ω²) / r"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112651937-16",
+          "questionNumber": 16,
+          "question": "An alternating voltage V = 200√2 sin(100πt) V is applied across an inductor of inductance L = 0.5/π H. What is the root-mean-square current through the inductor?",
+          "options": [
+            "4.0 A",
+            "2.83 A",
+            "5.65 A",
+            "2.0 A"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112651937-17",
+          "questionNumber": 17,
+          "question": "A beam of light traveling in a medium with refractive index n1 strikes an interface with a medium of refractive index n2 at Brewster's angle θ_B. If n1 = √3 and n2 = 1, what is the angle of refraction?",
+          "options": [
+            "30°",
+            "45°",
+            "60°",
+            "90°"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112651937-18",
+          "questionNumber": 18,
+          "question": "In Young's double slit experiment, if the entire apparatus is immersed in water of refractive index 4/3 without altering slit separation or screen distance, what happens to the fringe width β?",
+          "options": [
+            "Increases to (4/3) of its original value",
+            "Decreases to (3/4) of its original value",
+            "Remains unchanged",
+            "Decreases to (9/16) of its original value"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112651937-19",
+          "questionNumber": 19,
+          "question": "A convex lens of focal length 20 cm in air is made of glass (n = 1.5). When immersed in a liquid of refractive index 1.25, what will be its new focal length?",
+          "options": [
+            "40 cm",
+            "25 cm",
+            "100 cm",
+            "50 cm"
+          ],
+          "correctOptionIndex": 3
+        },
+        {
+          "id": "amcq-1791112651937-20",
+          "questionNumber": 20,
+          "question": "A metal surface is irradiated with light of frequency ν, and the stopping potential is V₁. When irradiated with light of frequency 2ν, the stopping potential becomes V₂. If e is the elementary charge, what is Planck's constant h?",
+          "options": [
+            "e(V₂ - V₁) / ν",
+            "e(V₂ + V₁) / ν",
+            "2e(V₂ - V₁) / ν",
+            "e(V₂ - 2V₁) / ν"
+          ],
+          "correctOptionIndex": 0
+        }
+      ],
+      "markingScheme": {
+        "1": 0,
+        "2": 2,
+        "3": 1,
+        "4": 0,
+        "5": 3,
+        "6": 1,
+        "7": 3,
+        "8": 0,
+        "9": 2,
+        "10": 1,
+        "11": 2,
+        "12": 0,
+        "13": 3,
+        "14": 1,
+        "15": 0,
+        "16": 0,
+        "17": 2,
+        "18": 1,
+        "19": 3,
+        "20": 0
+      },
+      "markingSchemeImageUrl": "",
+      "markingSchemeNotes": "Official marking scheme: 20 questions, 1 mark per correct answer. Maximum score: 20. Balanced A, B, C, D distribution.",
+      "createdAt": "2026-10-04T11:17:31.937Z",
+      "isPublished": true,
+      "provider": "Standard Syllabus"
+    },
+    {
+      "id": "assign-1791112769908-a89598",
+      "title": "G.C.E. (Advanced Level) Physics - Model Examination Paper: Mechanics & Modern Physics",
+      "subject": "Physics",
+      "topic": "Mechanics & Modern Physics",
+      "batch": "All",
+      "description": "Complete all 20 challenging MCQs on the standardized answer sheet. Darkly fill your chosen bubbles (A, B, C, D). You must submit your handwritten answer sheet within 1 day (24 hours). This assignment and your completed results remain visible in the portal for 1 month (30 days).",
+      "totalQuestions": 20,
+      "durationHours": 24,
+      "durationDays": 1,
+      "deadline": "2026-10-05T11:19:30.923Z",
+      "visibleUntil": "2026-11-03T11:19:30.923Z",
+      "mcqQuestions": [
+        {
+          "id": "amcq-1791112769908-1",
+          "questionNumber": 1,
+          "options": [
+            "1 / √2",
+            "1 / 2",
+            "1",
+            "√2"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112769908-2",
+          "questionNumber": 2,
+          "options": [
+            "(M + m)g tan θ",
+            "(M + m)g sin θ",
+            "M g tan θ",
+            "m g cot θ"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112769908-3",
+          "questionNumber": 3,
+          "options": [
+            "3 mg",
+            "4 mg",
+            "5 mg",
+            "6 mg"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112769908-4",
+          "questionNumber": 4,
+          "options": [
+            "g sin α",
+            "(1/2) g sin α",
+            "(3/4) g sin α",
+            "(2/3) g sin α"
+          ],
+          "correctOptionIndex": 3
+        },
+        {
+          "id": "amcq-1791112769908-5",
+          "questionNumber": 5,
+          "options": [
+            "GMm / (2R)",
+            "GMm / (3R)",
+            "GMm / (4R)",
+            "GMm / R"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112769908-6",
+          "questionNumber": 6,
+          "options": [
+            "√(g / L)",
+            "√(2g / L)",
+            "√(g / (2L))",
+            "2√(g / L)"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112769908-7",
+          "questionNumber": 7,
+          "options": [
+            "tan⁻¹(1 / (2μ))",
+            "tan⁻¹(1 / μ)",
+            "tan⁻¹(2 / μ)",
+            "tan⁻¹(μ / 2)"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112769908-8",
+          "questionNumber": 8,
+          "options": [
+            "(A / a) √(H / g)",
+            "(A / a) √(H / (2g))",
+            "(2A / a) √(H / g)",
+            "(A / a) √(H / (2g))"
+          ],
+          "correctOptionIndex": 3
+        },
+        {
+          "id": "amcq-1791112769908-9",
+          "questionNumber": 9,
+          "options": [
+            "30°",
+            "45°",
+            "60°",
+            "75°"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112769908-10",
+          "questionNumber": 10,
+          "options": [
+            "mL / M",
+            "mL / (M + m)",
+            "ML / (M + m)",
+            "(M + m)L / m"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112769908-11",
+          "questionNumber": 11,
+          "options": [
+            "e(V₂ - 2V₁)",
+            "e(2V₁ - V₂)",
+            "e(V₂ - V₁)",
+            "e(V₂ + V₁) / 2"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112769908-12",
+          "questionNumber": 12,
+          "options": [
+            "μ ∝ 1 / n",
+            "μ ∝ n²",
+            "μ ∝ 1 / n²",
+            "μ ∝ n"
+          ],
+          "correctOptionIndex": 3
+        },
+        {
+          "id": "amcq-1791112769908-13",
+          "questionNumber": 13,
+          "options": [
+            "1",
+            "2",
+            "2√2",
+            "4"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112769908-14",
+          "questionNumber": 14,
+          "options": [
+            "decrease by 20%",
+            "decrease by 25%",
+            "increase by 25%",
+            "decrease by 12.5%"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112769908-15",
+          "questionNumber": 15,
+          "options": [
+            "9.0 hours",
+            "2.0 hours",
+            "4.5 hours",
+            "1.5 hours"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112769908-16",
+          "questionNumber": 16,
+          "options": [
+            "(1/2) Q",
+            "(2/3) Q",
+            "(1/4) Q",
+            "(1/3) Q"
+          ],
+          "correctOptionIndex": 3
+        },
+        {
+          "id": "amcq-1791112769908-17",
+          "questionNumber": 17,
+          "options": [
+            "1.6 P / c",
+            "0.6 P / c",
+            "1.2 P / c",
+            "2.0 P / c"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "amcq-1791112769908-18",
+          "questionNumber": 18,
+          "options": [
+            "2 v₀",
+            "√2 v₀",
+            "2^(2/3) v₀",
+            "4^(1/3) v₀"
+          ],
+          "correctOptionIndex": 2
+        },
+        {
+          "id": "amcq-1791112769908-19",
+          "questionNumber": 19,
+          "options": [
+            "(ρ² g² A L³) / (2Y)",
+            "(ρ² g² A L³) / (6Y)",
+            "(ρ² g² A L³) / (3Y)",
+            "(ρ² g² A L³) / (12Y)"
+          ],
+          "correctOptionIndex": 1
+        },
+        {
+          "id": "amcq-1791112769908-20",
+          "questionNumber": 20,
+          "options": [
+            "h / (m_e c λ₀)",
+            "h / (2 m_e c λ₀)",
+            "m_e c λ₀ / (2h)",
+            "2h / (m_e c λ₀)"
+          ],
+          "correctOptionIndex": 3
+        }
+      ],
+      "markingScheme": {
+        "1": 2,
+        "2": 0,
+        "3": 1,
+        "4": 3,
+        "5": 2,
+        "6": 1,
+        "7": 0,
+        "8": 3,
+        "9": 2,
+        "10": 1,
+        "11": 0,
+        "12": 3,
+        "13": 2,
+        "14": 0,
+        "15": 1,
+        "16": 3,
+        "17": 0,
+        "18": 2,
+        "19": 1,
+        "20": 3
+      },
+      "markingSchemeImageUrl": "",
+      "markingSchemeNotes": "Official marking scheme: 20 questions, 1 mark per correct answer. Maximum score: 20. Balanced A, B, C, D distribution.",
+      "createdAt": "2026-10-04T11:19:30.923Z",
+      "isPublished": true,
+      "provider": "Gemini",
+      "createdBy": "admin-2"
     }
   ],
   "assignmentSubmissions": [

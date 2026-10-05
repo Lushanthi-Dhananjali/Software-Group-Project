@@ -139,50 +139,92 @@ interface PasswordResetCardProps {
   user: User;
   db: any;
   setDb: React.Dispatch<React.SetStateAction<any>>;
+  setLoggedInUser?: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
-function PasswordResetCard({ user, db, setDb }: PasswordResetCardProps) {
+function PasswordResetCard({ user, db, setDb, setLoggedInUser }: PasswordResetCardProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleReset = (e: React.FormEvent) => {
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    if (!newPassword.trim() || !confirmPassword.trim()) {
+    const trimmedNew = newPassword.trim();
+    const trimmedConfirm = confirmPassword.trim();
+
+    if (!trimmedNew || !trimmedConfirm) {
       setError('Please fill in all fields.');
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (trimmedNew !== trimmedConfirm) {
       setError('New passwords do not match!');
       return;
     }
 
-    if (newPassword.length < 4) {
+    if (trimmedNew.length < 4) {
       setError('Password must be at least 4 characters.');
       return;
     }
 
-    // Update user's password in the users array
-    const updatedUsers = db.users.map((u: User) => {
-      if (u.id === user.id) {
-        return { ...u, password: newPassword.trim() };
+    setIsUpdating(true);
+
+    try {
+      const updatedUser: User = {
+        ...user,
+        password: trimmedNew
+      };
+
+      // 1. Update in local db state
+      const userExists = (db.users || []).some(
+        (u: User) => u.id === user.id || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase())
+      );
+      const updatedUsers = userExists
+        ? (db.users || []).map((u: User) =>
+            u.id === user.id || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase())
+              ? updatedUser
+              : u
+          )
+        : [...(db.users || []), updatedUser];
+
+      setDb((prev: any) => ({
+        ...prev,
+        users: updatedUsers
+      }));
+
+      // 2. Update loggedInUser state & local storage
+      if (setLoggedInUser) {
+        setLoggedInUser(updatedUser);
       }
-      return u;
-    });
+      try {
+        localStorage.setItem('ap_logged_in_user', JSON.stringify(updatedUser));
+        saveLMSData('ap_users', updatedUsers);
+      } catch (lsErr) {
+        console.warn("Could not save updated user to localStorage:", lsErr);
+      }
 
-    setDb((prev: any) => ({
-      ...prev,
-      users: updatedUsers
-    }));
+      // 3. Persist to MongoDB backend database
+      try {
+        await saveRequiredUser(updatedUser);
+      } catch (err: any) {
+        console.warn("saveRequiredUser failed, attempting saveUser fallback:", err);
+        await saveUser(updatedUser);
+      }
 
-    setSuccess('Password updated successfully!');
-    setNewPassword('');
-    setConfirmPassword('');
+      setSuccess('Password updated successfully! You can now log in using your new password.');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error("Failed to update password:", err);
+      setError('Failed to update password on server. Please try again: ' + (err.message || err));
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -214,7 +256,8 @@ function PasswordResetCard({ user, db, setDb }: PasswordResetCardProps) {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Enter brand new password"
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500/50"
+            disabled={isUpdating}
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500/50 disabled:opacity-50"
           />
         </div>
 
@@ -227,15 +270,18 @@ function PasswordResetCard({ user, db, setDb }: PasswordResetCardProps) {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Retype brand new password"
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500/50"
+            disabled={isUpdating}
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500/50 disabled:opacity-50"
           />
         </div>
 
         <button
           type="submit"
-          className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-xs tracking-wider uppercase transition-colors cursor-pointer shadow-md active:scale-95"
+          disabled={isUpdating}
+          className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-xs tracking-wider uppercase transition-colors cursor-pointer shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          Update Account Password
+          {isUpdating && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
+          <span>{isUpdating ? 'Updating Password...' : 'Update Account Password'}</span>
         </button>
       </form>
     </div>
@@ -603,14 +649,28 @@ export default function App() {
   };
 
   // Login Handler
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authEmail.trim() || !authPassword.trim()) {
       alert("Please fill in both Email and Password fields.");
       return;
     }
 
-    const user = db.users.find(u => u.email.toLowerCase() === authEmail.trim().toLowerCase());
+    let currentUsers = db.users || [];
+    let user = currentUsers.find(u => u.email.toLowerCase() === authEmail.trim().toLowerCase());
+
+    // If user not found or password mismatch, check fresh database records from server
+    if (!user || (user.password && user.password !== authPassword.trim())) {
+      try {
+        const freshData = await fetchLMSData();
+        if (freshData?.users) {
+          setDb(freshData);
+          currentUsers = freshData.users;
+          user = currentUsers.find(u => u.email.toLowerCase() === authEmail.trim().toLowerCase());
+        }
+      } catch (_) {}
+    }
+
     if (!user) {
       alert("No account registered with this email address. Please register above!");
       return;
@@ -2647,7 +2707,7 @@ export default function App() {
                           </div>
 
                           {/* Password Reset Section */}
-                          <PasswordResetCard user={loggedInUser} db={db} setDb={setDb} />
+                          <PasswordResetCard user={loggedInUser} db={db} setDb={setDb} setLoggedInUser={setLoggedInUser} />
                         </div>
                       </div>
                     )}
