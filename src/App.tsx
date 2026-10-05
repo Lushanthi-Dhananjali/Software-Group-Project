@@ -2559,7 +2559,7 @@ export default function App() {
               {/* Portal Menu navigation panel */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 shadow-xl space-y-1">
                 {[
-                  { id: 'profile', label: 'Student Profile', icon: UserIcon },
+                  { id: 'profile', label: lang === 'en' ? 'Student Profile & Center' : 'ශිෂ්‍ය පැතිකඩ සහ මධ්‍යස්ථානය', icon: UserIcon },
                   { id: 'classes', label: t.activeLiveStream, icon: Video },
                   { id: 'summarizer', label: lang === 'en' ? 'AI Notes Summarizer' : 'AI සටහන් සාරාංශය', icon: Sparkles },
                   { id: 'practice', label: lang === 'en' ? 'Practice MCQ' : 'MCQ පුහුණුව', icon: BrainCircuit },
@@ -2649,7 +2649,7 @@ export default function App() {
                           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
                             <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3">
                               <UserIcon className="h-5 w-5 text-amber-500" />
-                              <h3 className="font-display font-bold text-white text-base">Student Profile Details</h3>
+                              <h3 className="font-display font-bold text-white text-base">{lang === 'en' ? 'Student Profile & Center Details' : 'ශිෂ්‍ය පැතිකඩ සහ මධ්‍යස්ථාන තොරතුරු'}</h3>
                             </div>
                             
                             <div className="space-y-3.5 text-xs leading-relaxed">
